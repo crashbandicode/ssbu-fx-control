@@ -45,10 +45,10 @@ Settings live in `sd:/ultimate/ssbu_fx_control/config.ini`, created with the
 defaults on first start (everything On, scope Online). See
 [configuration](docs/CONFIGURATION.md).
 
-Do not run it next to an Online Deluxe build that still contains its own FX
-feature with that FX enabled: both would filter the same requests, and both
-register ARCropolis callbacks for the same four files. Leave Deluxe's FX row
-On (its default) until Deluxe drops the feature.
+Online Deluxe 0.5.0 dropped its built-in FX feature in favour of this plugin.
+Do not run it next to an older Deluxe (0.4.x) with that FX row set to Off or
+Reduced: both would filter the same requests, and both register ARCropolis
+callbacks for the same four files.
 
 ## The Deluxe page
 
