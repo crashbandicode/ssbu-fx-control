@@ -1,5 +1,10 @@
 # Reduced FX emulator measurements
 
+Carried over from Online Deluxe. Every artifact below is an **Online Deluxe**
+NRO with the FX feature built in and one global FX row; the request policy is
+the one ssbu-fx-control ports, but no measurement here used a ssbu-fx-control
+build. Archive paths refer to the operator's machine.
+
 ## Explosive Flame at normal resolution — 2026-10-08
 
 This configuration did not establish a repeatable On-over-Off performance

@@ -1,5 +1,12 @@
 # Reduced FX performance acceptance
 
+This method was written for Online Deluxe's FX row and carries over to the
+per-fighter rows unchanged: set the row of the fighter under test (or All) and
+keep every other condition fixed. ssbu-fx-control has no timing capture of its
+own; the frame-time traces below come from Online Deluxe's `CAPTURE_TIMING`
+installed alongside it (leave Deluxe's own FX row On), or from another
+recorded frame-time source.
+
 The target is to approach **Off mode's frame-time stability under LessLag and
 LLUltra**, while keeping a recognizable cue. Looking less busy is not sufficient.
 Removing a decoration is useful only if it removes enough of the expensive work.
@@ -45,24 +52,26 @@ three modes spike there, separate the move effects from the shared critical
 presentation before changing policy. No removal of camera logic, hitstop,
 gameplay state or simulation timing is implied by this measurement.
 
-A diagnostic-only startup marker, `PROBE_CRITICAL_SCREEN`, allows the exact
+A diagnostic-only startup marker, `PROBE_CRITICAL_SCREEN` (in
+`sd:/ultimate/ssbu_fx_control/`), allows the exact
 `bg_criticalhit` / `sys_bg_criticalhit` names and their eight color variants
-to be suppressed in scoped Off mode. It does not suppress the camera, hitstop,
+to be suppressed while every fighter row is Off (All = Off) and the scope
+allows it. These backgrounds belong to no fighter. It does not suppress the camera, hitstop,
 slow motion, red finishing backgrounds or unrelated screen effects. Keep it
 absent from user installations. Compare normal Off with diagnostic Off using
 the same binary and fresh emulator processes, then repeat the original
 condition to check drift. On and Reduced ignore this marker.
 
 Diagnostic event 97 records the latched marker state at startup. Event 96
-records each matched request during a finite timing capture (and the first 32
-otherwise): argument A is the original Hash40; argument B uses bits 0–7 for
+records the first 32 matched requests (this plugin has no finite capture
+session to extend that): argument A is the original Hash40; argument B uses bits 0–7 for
 request path (1: screen, 2: screen-system, 3: ordinary) and bit 8 for actual
 diagnostic suppression. A missing event or an unchanged screenshot does not
 prove that the effect was suppressed.
 
 ## What the measurements mean
 
-The plugin's bounded CAPTURE_TIMING trace records CPU-side guest present calls
+Online Deluxe's bounded CAPTURE_TIMING trace records CPU-side guest present calls
 at 19.2 MHz. Consecutive present-entry intervals can expose a game-side cadence
 spike. They are **not** GPU completion, host display presentation, scanout or
 physical input latency. The render-callback series is a separate observation
@@ -113,7 +122,7 @@ slow motion and a generally sub60 baseline are not substitutes for reproducing
 the Switch effect-specific bottleneck.
 
 The Switch comparison remains required for a Switch-performance claim.
-No overclocking behavior is added to the rewrite.
+No overclocking behavior is added.
 
 Recorded experiments and limitations: [emulator FX results](FX_EMULATOR_RESULTS.md).
 

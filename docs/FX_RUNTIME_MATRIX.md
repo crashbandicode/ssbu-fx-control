@@ -1,5 +1,11 @@
 # FX runtime acceptance matrix
 
+Every row below was observed with an **Online Deluxe** build (NRO prefixes
+`833c`, `24e`, `7c`, `b99`, `c0`) and its single global FX row, before the
+feature moved into this plugin. ssbu-fx-control runs the same request
+pipeline and tables per fighter; none of these checks has been repeated with
+a ssbu-fx-control NRO yet.
+
 Implementation coverage and runtime acceptance are separate. Reduced changes
 specific visual layers, not every move a character can perform. All performance
 benefits remain subject to the [measurement method](FX_PERFORMANCE_METHOD.md).

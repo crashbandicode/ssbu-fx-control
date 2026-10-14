@@ -9,9 +9,11 @@ May-14 source and skyline-smash bed642e. This is source review, not runtime evid
 | Native effect installation dereferenced target before checking mapping | QueryMemory guard and HookRejected; skip that hook |
 | Flip commands have two effect names before joint | Independently filter slots 1/2, retain joint/rest; host regression |
 | Lua Int/Hash type normalization unnecessary | Preserve incoming kind and metadata |
-| (2026-10-05; superseded by the 0.4.2 Quickplay hold) Quickplay can temporarily pass main-menu init | Clear there; re-arm from the already-known online delay-setup site |
-| DISABLE_BUFFER must not disable the FX online marker | Shared hook installed once for either purpose; separate buffer-write flag |
-| Tracker unavailable could look like a broken toggle | Visible status plus diagnostic Compatibility record |
+| Tracker unavailable could look like a broken toggle | Visible status plus diagnostic Compatibility record (here: the Scope row shows `Unavailable`, code 16) |
+
+Two further findings concerned Online Deluxe's scene tracker and input
+buffer (Quickplay main-menu handling, the DISABLE_BUFFER flag); they stayed
+with Deluxe and are omitted here.
 
 The review verified primitive-stack bounds, 24-byte return ABI, actor category/kind,
 motion/status getters, constants and weapon qualification. No owner traversal or
@@ -24,3 +26,6 @@ The full review is retained locally with the audit artifacts; no peer code is ad
 as a runtime dependency by this review.
 
 Online context has source evidence but needs the actual transition matrix. The old c1706bbe runtime acceptance does not validate new hooks.
+
+This review predates ssbu-fx-control. The plugin's per-fighter mapping, menu
+and own online hooks have not had an independent review yet.
