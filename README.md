@@ -22,10 +22,11 @@ Changes are visual request-path only. Gameplay articles, hitboxes, camera,
 hitstop, RNG and simulation are never touched. Effects already on screen
 finish normally; new requests follow the setting.
 
-**Status:** version 0.1.0, not released. The policy and its tables are the
-ones Online Deluxe shipped and tested (see [FX runtime matrix](docs/FX_RUNTIME_MATRIX.md));
-this plugin build itself has host tests and a Skyline build, **no runtime
-test in a game yet**.
+**Status:** version 0.1.0. The policy and its tables are the ones Online
+Deluxe shipped and tested (see [FX runtime matrix](docs/FX_RUNTIME_MATRIX.md)).
+This plugin was tested in Eden on 2026-10-14 next to Deluxe 0.5.0: the FX
+Control page, the INI round trip and Sephiroth's Gigaflare under On, Off and
+Reduced (GIFs below). **Not yet verified on a console.**
 
 ## Install
 
@@ -67,6 +68,8 @@ Left/Right changes it. In a match the page becomes Deluxe's compact strip.
 A Deluxe older than 0.5.0 refuses the registration (17 rows need descriptor
 version 3); the plugin then works from the INI alone.
 
+![FX Control page in Deluxe's window](docs/media/fx-control-page.png)
+
 ## Covered effects
 
 One row per covered move. "Off removes" lists the named layers the Off table
@@ -94,7 +97,7 @@ sibling it requests instead. Exact names are in
 | Palutena | Up smash | Backlight, twinkle, lightning, meteor | Keeps `palutena_pressure`, `palutena_wand_light2`; culls `palutena_backlight` | _(recording pending)_ |
 | Palutena | Forward and down smash | Wing feather layers | Keeps `palutena_feather`; culls `palutena_backlight` | _(recording pending)_ |
 | Palutena | Up air | Feather, twinkle and backlight layers; the `palutena_backlight2` marker is protected and stays | EFF sibling `palutena_backlight2_reduced` (two emitters kept) | _(recording pending)_ |
-| Sephiroth | Flare / Megaflare / Gigaflare (neutral special) | Burst, smoke, fire, ring and spark layers; the Gigaflare screen overlay (`edge_fire3_screen2`) is skipped | Keeps `edge_fire3_burst2`, `edge_fire2_burst2`, `edge_fire1_burst`; culls `edge_fire3_burst`, `edge_fire2_burst`, `edge_fire1_sign`; overlay skipped | _(recording pending)_ |
+| Sephiroth | Flare / Megaflare / Gigaflare (neutral special) | Burst, smoke, fire, ring and spark layers; the Gigaflare screen overlay (`edge_fire3_screen2`) is skipped | Keeps `edge_fire3_burst2`, `edge_fire2_burst2`, `edge_fire1_burst`; culls `edge_fire3_burst`, `edge_fire2_burst`, `edge_fire1_sign`; overlay skipped | Gigaflare, Eden 2026-10-14: ![On](docs/media/sephiroth-gigaflare-on.gif) ![Off](docs/media/sephiroth-gigaflare-off.gif) ![Reduced](docs/media/sephiroth-gigaflare-reduced.gif) |
 | Sephiroth | Shadow Flare (side special) | Every `edge_shadowflare_*` layer | EFF siblings for start, hold, beam, beam hit, bullet, bullet end, bullet attack and bullet hit (aura stays original) | _(recording pending)_ |
 | Sephiroth | Scintilla (down special) | Senkou start, hold, attack, end and flare/line layers | Keeps `edge_senkou_shield`, `edge_senkou_hold_attack`; culls `edge_senkou_start`, `edge_senkou_hold` | _(recording pending)_ |
 | Sephiroth | Dash attack | Dash, aura, hit, line, speed-line and spark layers | Keeps `edge_attack_dash`, `edge_attack_dash_hit`; culls `edge_attack_dash_aura`, `edge_attack_dash2` | _(recording pending)_ |
@@ -105,6 +108,10 @@ sibling it requests instead. Exact names are in
 | Inkling | Roller | Roller splash walk / run / air parents | EFF siblings keeping the `Splash` emitter | _(recording pending)_ |
 | Inkling | Forward and down smash, brush, arcs (character-wide) | `inkling_attack_arc`, `inkling_brush`, `inkling_splash` | Keeps `inkling_pablo_splash`, `inkling_slosher_splash(2)`; culls `inkling_pablo_trace2`, `inkling_slosher_trace` | _(recording pending)_ |
 | Ganondorf | Warlock Punch, sword (character-wide) | `ganon_majinken_flash`, `ganon_majinken_start`, `ganon_sword_flare` | Keeps `ganon_majinken`, `ganon_majinken_start`, `ganon_sword_flare`; culls `ganon_majinken_flash`, `ganon_sword_trace` | _(recording pending)_ |
+
+GIF cells marked _recording pending_ are filled in as each move is recorded
+in Eden under On, Off and Reduced; the policy for those rows is unchanged from
+Online Deluxe 0.4.x.
 
 General hit, shield, damage and KO feedback (`sys_*`), projectiles, hitbox
 cues and 41 named reflector/counter/position cues are never filtered. Move-
