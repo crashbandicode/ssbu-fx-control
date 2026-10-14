@@ -54,7 +54,7 @@ pub(super) fn detect() -> OnlineSource {
     if source == OnlineSource::Unavailable {
         record(Code::Compatibility, 3, u64::from(api_present));
         skyline::println!(
-            "[ssbu-fx-control] host without an online-context export; Scope unavailable, policy applies everywhere"
+            "[ssbu-fx-control] host without an online-context export; Scope unavailable, Online scope never applies (set scope=all to filter)"
         );
     }
     SOURCE.store(source as u8, Ordering::Release);

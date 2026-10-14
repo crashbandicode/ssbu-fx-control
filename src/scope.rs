@@ -14,8 +14,11 @@
 //! * [`OnlineSource::Unavailable`]: Deluxe (or SsbuSync) is present but does
 //!   not export an online context. Installing this plugin's own hook would
 //!   collide with that host's hook on the same instruction, so it is not
-//!   installed. The policy applies everywhere and the Scope row shows
-//!   `Unavailable`.
+//!   installed. With no online signal, Scope Online never applies (the
+//!   effects stay original everywhere) and the Scope row shows `Unavailable`;
+//!   setting `scope=all` in the INI is the explicit way to filter offline
+//!   too. Silently widening Online to All was rejected: a user who chose
+//!   Online would get filtered effects in offline play without asking.
 //! * [`OnlineSource::Undetected`]: no host, but the own hooks were refused
 //!   (unexpected instruction words). Scope Online then never applies, the
 //!   same conservative choice Deluxe made when its scene hooks failed.
@@ -75,8 +78,7 @@ pub fn allows(
     match source {
         OnlineSource::Host => host_bits.unwrap_or(0) & ONLINE_CONTEXT_ONLINE != 0 && !training,
         OnlineSource::Own => own_marked && !training,
-        OnlineSource::Unavailable => true,
-        OnlineSource::Undetected => false,
+        OnlineSource::Unavailable | OnlineSource::Undetected => false,
     }
 }
 
@@ -129,12 +131,13 @@ mod tests {
         assert!(allows(FxScope::Online, own, None, true, false));
         assert!(!allows(FxScope::Online, own, None, true, true));
         assert!(!allows(FxScope::Online, own, Some(online), false, false));
-        assert!(allows(
+        // No online signal at all: Online scope never applies, All still does.
+        assert!(!allows(
             FxScope::Online,
             OnlineSource::Unavailable,
             None,
-            false,
-            true
+            true,
+            false
         ));
         assert!(!allows(
             FxScope::Online,

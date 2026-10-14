@@ -59,7 +59,7 @@ Left/Right changes it. In a match the page becomes Deluxe's compact strip.
 
 | Row | Choices | Notes |
 | --- | --- | --- |
-| Scope | Online / All | Online: online play outside Training. `Unavailable` with a Deluxe older than 0.5.0. |
+| Scope | Online / All | Online: online play outside Training. With a Deluxe older than 0.5.0 there is no online signal: the row reads `Unavailable` and Online never applies (effects stay original until `scope=all` is set in the INI). |
 | All | On / Off / Reduced | Sets every fighter row. Shows `Unavailable` while the rows differ. |
 | Kazuya ... Ganondorf | On / Off / Reduced | One row per covered fighter. On is green, Reduced yellow. |
 | EFF variants | Ready / Pending / Unavailable | Read-only. Ready: a sibling file loaded. Pending: none loaded yet. Unavailable: ARCropolis missing or a file rejected. |
