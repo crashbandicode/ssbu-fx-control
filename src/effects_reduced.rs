@@ -20,6 +20,15 @@ use crate::{
 mod family;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+/// Character-wide keep and cull names (Pyra, Mythra, Byleth, Inkling,
+/// Ganondorf, Chrom extra), for the compile-time fighter map.
+pub(crate) const GLOBAL_NAME_TABLES: &[&[&str]] = family::GLOBAL_NAME_TABLES;
+
+/// Move-qualified keep and cull names per profile (tests only).
+#[cfg(test)]
+pub(crate) const PROFILE_NAME_TABLES: &[(effect_context::Profile, &[&str], &[&str])] =
+    family::PROFILE_NAME_TABLES;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Role {
     None,

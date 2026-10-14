@@ -1,33 +1,36 @@
-use super::{publish, record, settings, Code, CONFIG_GENERATION, DATA_DIR, RECORDER};
-use crate::{
-    build_info,
-    config::{self, Config},
-};
+//! `install.log`, `events.log` and the plugin's background thread.
+//!
+//! The thread wakes every 500 ms: it flushes the bounded event ring to
+//! `events.log` and, after the table has been quiet for two seconds, rewrites
+//! `config.ini` when the table changed (see `crate::persist`). Game hooks never
+//! touch a file.
+use super::{record, Code, DATA_DIR, RECORDER, TABLE};
+use crate::{build_info, config, persist::Saver, scope::OnlineSource};
 use std::{
     ffi::CString,
     fs::{self, File, OpenOptions},
     io::{self, Write},
     path::Path,
     sync::atomic::{AtomicBool, Ordering},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 extern "C" {
-    // Hidden, module-local symbols from the Skyline Rust linker script. Using
-    // them avoids get_plugin_addresses(), whose C++ singleton is distinct from
-    // the manager used by the loader and enters __cxa_guard_acquire at startup.
+    // Module-local symbols from the Skyline Rust linker script.
     static __text_start: u8;
     static __bss_end: u8;
 }
 
 const MAX_LOG_BYTES: u64 = 4 * 1024 * 1024;
-/// Stack of the diagnostics thread. The platform default of 2 MiB was the
-/// largest single resident cost of the plugin through 0.3.6.
-const DIAGNOSTICS_STACK_BYTES: usize = 256 * 1024;
+/// Stack of the background thread; the platform default is 2 MiB.
+const THREAD_STACK_BYTES: usize = 128 * 1024;
 static PANICKING: AtomicBool = AtomicBool::new(false);
 
-/// Persist startup progress before configuration, recorder locks or Skyline's
-/// asynchronous logger are used. This also catches failures in diagnostics itself.
+fn config_path() -> std::path::PathBuf {
+    Path::new(DATA_DIR).join("config.ini")
+}
+
+/// Persist startup progress before anything else can fail.
 pub(super) fn prepare() {
     let root = Path::new(DATA_DIR);
     if fs::create_dir_all(root).is_ok() {
@@ -49,6 +52,18 @@ pub(super) fn startup_phase(phase: &str) {
     }
 }
 
+/// Synchronous only during installation, never in a frame or effect callback.
+pub(super) fn install_checkpoint(code: Code, address: u64, detail: u64) {
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(Path::new(DATA_DIR).join("install.log"))
+    {
+        let _ = writeln!(file, "{} 0x{address:x} 0x{detail:x}", code as u16);
+        let _ = file.sync_all();
+    }
+}
+
 fn rotate(path: &Path) -> io::Result<File> {
     if path.exists() {
         let previous = path.with_extension("previous.log");
@@ -60,20 +75,9 @@ fn rotate(path: &Path) -> io::Result<File> {
     OpenOptions::new().create(true).append(true).open(path)
 }
 
-fn save_config(config: &Config) -> io::Result<()> {
-    let path = Path::new(DATA_DIR).join("config.ini");
-    crate::config_store::save(&path, &config.serialize())
-}
-
-/// Confirmed-missing check through the native API. Also used for plugin INIs.
-pub(super) fn file_is_missing(path: &Path) -> bool {
-    config_is_missing(path)
-}
-
-fn config_is_missing(path: &Path) -> bool {
-    // skyline-v3's std maps GetEntryType's 0x202 to ErrorKind::Other.
-    // Ask the native API so only a confirmed missing file is created; an
-    // unreadable or invalid existing config must remain untouched.
+/// skyline's std maps `GetEntryType`'s 0x202 to `ErrorKind::Other`. Ask the
+/// native API so only a confirmed-missing file is created.
+fn file_is_missing(path: &Path) -> bool {
     let Ok(path) = CString::new(path.as_os_str().as_encoded_bytes()) else {
         return false;
     };
@@ -81,53 +85,70 @@ fn config_is_missing(path: &Path) -> bool {
     unsafe { skyline::nn::fs::GetEntryType(&mut entry_type, path.as_ptr().cast()) == 0x202 }
 }
 
-pub(super) fn start(version: &str) {
-    let root = Path::new(DATA_DIR);
-    let dir_result = fs::create_dir_all(root);
-    let config_path = root.join("config.ini");
-    startup_phase("config_read_begin");
-    if let Err(error) = crate::config_store::recover(&config_path) {
-        skyline::println!("[Deluxe] config recovery failed: {}", error);
+fn read_existing(path: &Path) -> io::Result<String> {
+    match fs::read_to_string(path) {
+        Ok(text) => Ok(text),
+        Err(error) if error.kind() == io::ErrorKind::NotFound || file_is_missing(path) => {
+            Ok(String::new())
+        }
+        Err(error) => Err(error),
     }
-    let (config, config_note) = match fs::read_to_string(&config_path) {
-        Ok(text) => match config::parse(&text) {
-            Ok(config) => (config, "loaded config".to_owned()),
-            Err(error) => {
-                record(Code::ConfigRejected, 0, 0);
-                (
-                    Config::default(),
-                    format!("rejected config (file preserved): {error}"),
-                )
-            }
-        },
-        Err(error)
-            if error.kind() == io::ErrorKind::NotFound || config_is_missing(&config_path) =>
-        {
-            let config = Config::default();
-            let note = match save_config(&config) {
+}
+
+/// Rewrites the INI from the table, keeping unknown lines.
+fn save_config() -> io::Result<()> {
+    let path = config_path();
+    crate::config_store::recover(&path)?;
+    let existing = read_existing(&path)?;
+    let text = config::render(&existing, &TABLE.settings());
+    if text == existing {
+        return Ok(());
+    }
+    crate::config_store::save(&path, &text)
+}
+
+/// Loads the INI into the table. A missing file is created with the defaults;
+/// an unreadable one is left untouched and the defaults are used.
+fn load_config() -> String {
+    let path = config_path();
+    if let Err(error) = crate::config_store::recover(&path) {
+        return format!("config recovery failed: {error}");
+    }
+    match fs::read_to_string(&path) {
+        Ok(text) => {
+            TABLE.load(&config::parse(&text));
+            "loaded config".to_owned()
+        }
+        Err(error) if error.kind() == io::ErrorKind::NotFound || file_is_missing(&path) => {
+            TABLE.load(&config::Settings::default());
+            match save_config() {
                 Ok(()) => "created default config".to_owned(),
                 Err(error) => format!("default config not persisted: {error}"),
-            };
-            (config, note)
+            }
         }
-        Err(error) => (Config::default(), format!("config unreadable: {error}")),
-    };
+        Err(error) => {
+            TABLE.load(&config::Settings::default());
+            format!("config unreadable (file preserved, defaults used): {error}")
+        }
+    }
+}
+
+pub(super) fn start(version: &str, source: OnlineSource) {
+    let root = Path::new(DATA_DIR);
+    let dir_result = fs::create_dir_all(root);
+    startup_phase("config_read_begin");
+    let config_note = load_config();
     startup_phase("config_read_complete");
-    publish(&config);
-    startup_phase("recorder_begin");
+    let settings = TABLE.settings();
     record(
         Code::ConfigLoaded,
-        config.effects as u64,
-        config.input_buffer as i64 as u64,
+        source as u64,
+        settings.all().map_or(u64::MAX, |mode| mode as u64),
     );
-    startup_phase("recorder_ready");
     let text_base =
         unsafe { skyline::hooks::getRegionAddress(skyline::hooks::Region::Text) as u64 };
-    super::peer_observer::refresh_local_facts();
-    startup_phase("game_text_ready");
     let plugin_start = core::ptr::addr_of!(__text_start) as u64;
     let plugin_end = core::ptr::addr_of!(__bss_end) as u64;
-    startup_phase("plugin_bounds_ready");
     let module_id = if plugin_end.saturating_sub(plugin_start) >= 0x60
         && unsafe { super::memory::accessible(plugin_start as usize, 0x60, false) }
     {
@@ -144,14 +165,13 @@ pub(super) fn start(version: &str) {
         "range-unavailable".to_owned()
     };
     let header = format!(
-        "Deluxe rewrite {}\ncommit={}\nSmash={version}\ngame_text=0x{text_base:x}\nplugin_start=0x{plugin_start:x} plugin_end=0x{plugin_end:x}\nmodule_id={module_id}\n{config_note}\nsettings={config:?}\nrender_backend=not-installed\nsequence tick code arg0 arg1\n",
-        build_info::BUILD_ID, build_info::GIT_COMMIT,
+        "ssbu-fx-control {}\ncommit={}\nSmash={version}\ngame_text=0x{text_base:x}\nplugin_start=0x{plugin_start:x} plugin_end=0x{plugin_end:x}\nmodule_id={module_id}\nonline_source={source:?}\n{config_note}\nsettings={settings:?}\nsequence tick code arg0 arg1\n",
+        build_info::BUILD_ID,
+        build_info::GIT_COMMIT,
     );
-    startup_phase("skyline_header_begin");
     skyline::println!("{}", header);
-    startup_phase("skyline_header_queued");
     if let Err(error) = dir_result {
-        skyline::println!("[Deluxe] diagnostic directory unavailable: {}", error);
+        skyline::println!("[ssbu-fx-control] data directory unavailable: {}", error);
     }
     if let Ok(mut file) = OpenOptions::new()
         .append(true)
@@ -164,27 +184,21 @@ pub(super) fn start(version: &str) {
     let log_path = root.join("events.log");
     let mut log = match rotate(&log_path) {
         Ok(mut file) => {
-            if let Err(error) = file
+            let _ = file
                 .write_all(header.as_bytes())
-                .and_then(|_| file.sync_data())
-            {
-                skyline::println!("[Deluxe] diagnostic header write failed: {}", error);
-            }
+                .and_then(|_| file.sync_data());
             Some(file)
         }
         Err(error) => {
-            skyline::println!("[Deluxe] file logging unavailable: {}", error);
+            skyline::println!("[ssbu-fx-control] file logging unavailable: {}", error);
             None
         }
     };
 
-    startup_phase("panic_hook_begin");
-
-    // Preserve other mods' panic hook. Hardware exceptions never reach this hook.
+    // Preserve other mods' panic hook. Hardware exceptions never reach this.
     let previous = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         if !PANICKING.swap(true, Ordering::AcqRel) {
-            record(Code::Panic, 0, 0);
             if let Ok(mut file) = File::create(Path::new(DATA_DIR).join("panic.log")) {
                 let _ = writeln!(file, "build={}\n{info}", build_info::BUILD_ID);
                 if let Some(snapshot) = RECORDER.snapshot() {
@@ -198,125 +212,95 @@ pub(super) fn start(version: &str) {
         }
         previous(info);
     }));
-    startup_phase("panic_hook_ready");
     record(Code::Boot, plugin_start, text_base);
+    record(Code::FxOnlineContext, source as u64, 0);
 
-    let mut generation = CONFIG_GENERATION.load(Ordering::Acquire);
-    startup_phase("diagnostic_thread_begin");
-    // The Switch std default is a 2 MiB stack per thread, taken from the game
-    // heap for the whole run. This thread formats log lines and streams CSV
-    // rows through heap buffers; its deepest frames are the file writers.
+    let started = Instant::now();
+    let mut saver = Saver::new(TABLE.generation());
+    startup_phase("thread_begin");
     if let Err(error) = std::thread::Builder::new()
-        .name("deluxe-diagnostics".into())
-        .stack_size(DIAGNOSTICS_STACK_BYTES)
+        .name("ssbu-fx-control".into())
+        .stack_size(THREAD_STACK_BYTES)
         .spawn(move || {
             let mut persisted = 0;
             let mut dropped = 0;
             let mut iteration = 0u64;
             let mut error_reported = false;
-            let mut timing = super::timing::Service::default();
             loop {
-                // A running capture drains its chunks twice per period so a
-                // match's row rate has twice the headroom of the 30 s capture.
-                std::thread::sleep(Duration::from_millis(250));
-                if timing.capturing() {
-                    timing.poll();
-                }
-                std::thread::sleep(Duration::from_millis(250));
-                timing.poll();
-                super::auto_driver::poll();
-                super::presentation::poll();
-                super::fps_boost::publish();
-                super::dispatcher_backoff::publish();
-                super::pia_rtt::poll();
-                super::peer_observer::poll();
-                super::fighter_probe::poll();
+                std::thread::sleep(Duration::from_millis(500));
                 iteration += 1;
-                super::hang_trace::poll(iteration);
                 if iteration.is_multiple_of(10) {
-                    super::nvn::write_status();
-                    record(Code::Heartbeat, settings().effects as u64, iteration);
-                    record(
-                        Code::OverlayHealth,
-                        super::overlay_host::ready() as u64,
-                        super::overlay_host::bootstrap_calls(),
-                    );
-                    super::pia_rtt::log_counters();
+                    record(Code::Heartbeat, TABLE.generation(), iteration);
                 }
-                if let Some(file) = log.as_mut() {
-                    if let Some(snapshot) = RECORDER.snapshot() {
-                        let result: io::Result<()> = (|| {
-                            if snapshot.newest.saturating_sub(persisted)
-                                > crate::diagnostics::CAPACITY as u64
-                            {
-                                writeln!(file, "gap: ring overwritten after sequence {persisted}")?;
-                            }
-                            for event in snapshot.after(persisted) {
-                                writeln!(
-                                    file,
-                                    "{} {} {} 0x{:x} 0x{:x}",
-                                    event.sequence, event.tick, event.code, event.a, event.b
-                                )?;
-                            }
-                            if snapshot.dropped != dropped {
-                                writeln!(file, "dropped_total={}", snapshot.dropped)?;
-                            }
-                            file.sync_data()
-                        })();
-                        match result {
-                            Ok(()) => {
-                                persisted = snapshot.newest;
-                                dropped = snapshot.dropped;
-                            }
-                            Err(error) if !error_reported => {
-                                skyline::println!("[Deluxe] log sink error: {}", error);
+                let now_ms = started.elapsed().as_millis() as u64;
+                let generation = TABLE.generation();
+                if saver.poll(generation, now_ms) {
+                    match save_config() {
+                        Ok(()) => {
+                            saver.saved(generation);
+                            record(Code::ConfigSaved, generation, 1);
+                        }
+                        Err(error) => {
+                            saver.failed(now_ms);
+                            record(Code::ConfigSaved, generation, 0);
+                            if !error_reported {
+                                skyline::println!(
+                                    "[ssbu-fx-control] config save failed: {}",
+                                    error
+                                );
                                 error_reported = true;
                             }
-                            Err(_) => {}
-                        }
-                    }
-                    if file
-                        .metadata()
-                        .map(|m| m.len() >= MAX_LOG_BYTES)
-                        .unwrap_or(false)
-                    {
-                        log = rotate(&log_path).ok();
-                        if let Some(file) = log.as_mut() {
-                            let _ = file.write_all(header.as_bytes());
                         }
                     }
                 }
-                super::plugin_export::flush_persistence();
-                let next_generation = CONFIG_GENERATION.load(Ordering::Acquire);
-                if next_generation != generation {
-                    match save_config(&settings()) {
+                let Some(file) = log.as_mut() else {
+                    continue;
+                };
+                if let Some(snapshot) = RECORDER.snapshot() {
+                    let result: io::Result<()> = (|| {
+                        if snapshot.newest.saturating_sub(persisted)
+                            > crate::diagnostics::CAPACITY as u64
+                        {
+                            writeln!(file, "gap: ring overwritten after sequence {persisted}")?;
+                        }
+                        for event in snapshot.after(persisted) {
+                            writeln!(
+                                file,
+                                "{} {} {} 0x{:x} 0x{:x}",
+                                event.sequence, event.tick, event.code, event.a, event.b
+                            )?;
+                        }
+                        if snapshot.dropped != dropped {
+                            writeln!(file, "dropped_total={}", snapshot.dropped)?;
+                        }
+                        file.sync_data()
+                    })();
+                    match result {
                         Ok(()) => {
-                            generation = next_generation;
-                            record(Code::ConfigSaved, generation, settings().effects as u64);
+                            persisted = snapshot.newest;
+                            dropped = snapshot.dropped;
                         }
                         Err(error) if !error_reported => {
-                            skyline::println!("[Deluxe] config save failed: {}", error);
+                            skyline::println!("[ssbu-fx-control] log sink error: {}", error);
                             error_reported = true;
                         }
                         Err(_) => {}
                     }
                 }
+                if file
+                    .metadata()
+                    .map(|m| m.len() >= MAX_LOG_BYTES)
+                    .unwrap_or(false)
+                {
+                    log = rotate(&log_path).ok();
+                    if let Some(file) = log.as_mut() {
+                        let _ = file.write_all(header.as_bytes());
+                    }
+                }
             }
         })
     {
-        skyline::println!("[Deluxe] diagnostic thread failed: {}", error);
+        skyline::println!("[ssbu-fx-control] background thread failed: {}", error);
     }
-    startup_phase("diagnostic_thread_returned");
-}
-
-/// Synchronous only during installation, never in a frame/effect callback.
-pub(super) fn install_checkpoint(code: Code, address: u64, detail: u64) {
-    if let Ok(mut file) = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(Path::new(DATA_DIR).join("install.log"))
-    {
-        let _ = writeln!(file, "{} 0x{address:x} 0x{detail:x}", code as u16);
-        let _ = file.sync_all();
-    }
+    startup_phase("thread_returned");
 }

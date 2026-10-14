@@ -77,7 +77,7 @@ fn file_with(payload: &[u8], version: u16) -> (Vec<u8>, std::ops::Range<usize>) 
     vfx[22..24].copy_from_slice(&0x20u16.to_le_bytes());
     vfx.extend_from_slice(&esta);
     vfx.extend_from_slice(&texture);
-    while vfx.len() % 16 != 0 {
+    while !vfx.len().is_multiple_of(16) {
         vfx.push(0);
     }
     let file_size = vfx.len() as u32;
@@ -215,7 +215,7 @@ fn stock_chrom_changes_only_the_copied_life_field() {
     expected[life_at..life_at + 4].copy_from_slice(&2i32.to_le_bytes());
 
     let mut buffer = input.clone();
-    buffer.resize(ssbu_online_deluxe_rewrite::eff_variant::CHROM_MAX_BYTES, 0);
+    buffer.resize(ssbu_fx_control::eff_variant::CHROM_MAX_BYTES, 0);
     let len = append_trace_life_sibling_in_place(&mut buffer, input.len(), &request()).unwrap();
     assert_eq!(&buffer[..len], &expected);
     for range in untouched_copy.source_emitter_payloads {

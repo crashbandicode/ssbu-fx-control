@@ -1,14 +1,14 @@
 use std::mem::MaybeUninit;
 use std::sync::{Mutex, MutexGuard};
 
-use ssbu_online_deluxe_rewrite::acmd::{replacements, Value};
-use ssbu_online_deluxe_rewrite::config::FxMode;
-use ssbu_online_deluxe_rewrite::eff_variant::{
-    self, VariantAvailability, PATH_HASH, REDUCED, SOURCE,
-};
-use ssbu_online_deluxe_rewrite::effect_context::Context;
-use ssbu_online_deluxe_rewrite::effects::hash40;
-use ssbu_online_deluxe_rewrite::menu;
+use ssbu_fx_control::acmd::{replacements, Value};
+use ssbu_fx_control::config::FxMode;
+use ssbu_fx_control::eff_variant::{self, VariantAvailability, PATH_HASH, REDUCED, SOURCE};
+use ssbu_fx_control::effect_context::Context;
+use ssbu_fx_control::effects::hash40;
+use ssbu_fx_control::fighters::Fighter;
+use ssbu_fx_control::menu;
+use ssbu_fx_control::policy::ModeTable;
 
 fn value(raw: u64) -> Value {
     Value {
@@ -105,74 +105,38 @@ fn up_air_maps_only_after_the_callback_succeeds() {
         replacements(FxMode::Reduced, &args, 1, Some(up_air())),
         [None, None]
     );
+    // Deluxe's single FX row is replaced by per-fighter rows. The Palutena row
+    // keeps showing Reduced whatever the file state (never a silent Off), and
+    // the read-only status row reports the file.
+    let table = ModeTable::new();
+    assert!(table.set(Fighter::Palutena, FxMode::Reduced));
+    let palutena = 2 + Fighter::Palutena.index();
+    for state in [
+        VariantAvailability::Unavailable,
+        VariantAvailability::Pending,
+        VariantAvailability::Ready,
+    ] {
+        assert_eq!(
+            menu::current(&table, palutena, true, state),
+            Some(FxMode::Reduced as usize)
+        );
+        assert_eq!(
+            menu::current(
+                &table,
+                menu::STATUS_ROW,
+                true,
+                menu::variant_status(&[state])
+            ),
+            Some(match state {
+                VariantAvailability::Ready => 0,
+                VariantAvailability::Pending => 1,
+                VariantAvailability::Unavailable => 2,
+            })
+        );
+    }
     assert_eq!(
-        menu::fx_row_value(FxMode::Reduced, false, VariantAvailability::Unavailable),
-        "Reduced"
-    );
-    assert_eq!(
-        menu::fx_row_value(FxMode::Reduced, false, VariantAvailability::Pending),
-        "Reduced"
-    );
-    assert_eq!(
-        menu::fx_row_value(FxMode::Reduced, false, VariantAvailability::Ready),
-        "Reduced"
-    );
-    assert_eq!(
-        menu::fx_file_debug(
-            FxMode::Reduced,
-            false,
-            VariantAvailability::Unavailable,
-            "sibling ready"
-        ),
-        "original (callback unavailable)"
-    );
-    assert_eq!(
-        menu::fx_file_debug(
-            FxMode::Reduced,
-            false,
-            VariantAvailability::Pending,
-            "sibling ready"
-        ),
-        "original (callback pending)"
-    );
-    assert_eq!(
-        menu::fx_file_debug(
-            FxMode::Reduced,
-            false,
-            VariantAvailability::Ready,
-            "sibling ready"
-        ),
-        "sibling ready"
-    );
-    assert_eq!(
-        menu::fx_file_debug(
-            FxMode::Reduced,
-            false,
-            VariantAvailability::Ready,
-            "life 3 to 2 candidate"
-        ),
-        "life 3 to 2 candidate"
-    );
-    assert_eq!(
-        menu::fx_file_debug(
-            FxMode::Off,
-            false,
-            VariantAvailability::Ready,
-            "sibling ready"
-        ),
-        "not selected"
-    );
-    assert_eq!(
-        menu::fx_row_value(FxMode::Reduced, true, VariantAvailability::Unavailable),
-        "Reduced (tracker unavailable)"
-    );
-    assert_eq!(
-        menu::fx_row_value(FxMode::On, false, VariantAvailability::Unavailable),
-        "On"
-    );
-    assert_eq!(
-        menu::fx_row_value(FxMode::Off, false, VariantAvailability::Ready),
-        "Off"
+        menu::variant_status(&[VariantAvailability::Ready, VariantAvailability::Unavailable]),
+        VariantAvailability::Unavailable
     );
     eff_variant::reset_for_test();
 }
@@ -289,9 +253,12 @@ fn roller_splash_uses_its_own_gate() {
         Some(reduced)
     );
     assert_eq!(replacements(FxMode::On, &[value(splash)], 1, None)[0], None);
+    // Off is the catalog, never the sibling: the roller parents are Off-table
+    // names (effects_catalog `off_nulls_proven_roller_splash_parents_only`).
+    // The Deluxe copy of this test still expected `None` here.
     assert_eq!(
         replacements(FxMode::Off, &[value(splash)], 1, None)[0],
-        None
+        Some(ssbu_fx_control::effects::NULL_EFFECT)
     );
     eff_variant::set_ink_availability_for_test(VariantAvailability::Unavailable);
     assert_eq!(
@@ -335,5 +302,40 @@ fn chrom_life_gate_does_not_clear_edge_or_become_off() {
         Some(reduced)
     );
     assert_eq!(replacements(FxMode::On, &[value(chrom)], 1, None)[0], None);
+    eff_variant::reset_for_test();
+}
+
+#[test]
+fn siblings_follow_only_their_own_fighter_row() {
+    use ssbu_fx_control::policy::decide;
+    let _gates = IsolatedGates::enter();
+    eff_variant::set_availability_for_test(VariantAvailability::Ready);
+    eff_variant::set_ink_availability_for_test(VariantAvailability::Ready);
+    let table = ModeTable::new();
+    let splash = hash40("inkling_roller_splash_walk");
+    // Palutena Reduced: the up-air sibling; Inkling still On.
+    assert!(table.set(Fighter::Palutena, FxMode::Reduced));
+    assert_eq!(
+        decide(&table, true, SOURCE, Some(up_air())).forwarded,
+        REDUCED
+    );
+    assert_eq!(
+        decide(&table, true, SOURCE, Some(other_air())).forwarded,
+        SOURCE
+    );
+    assert_eq!(decide(&table, true, splash, None).forwarded, splash);
+    // Inkling Reduced too: its roller sibling. Out of scope: originals.
+    assert!(table.set(Fighter::Inkling, FxMode::Reduced));
+    assert_eq!(
+        decide(&table, true, splash, None).forwarded,
+        hash40("inkling_roller_splash_walk_reduced")
+    );
+    assert_eq!(decide(&table, false, splash, None).forwarded, splash);
+    // Palutena Off is the Off catalog, never the sibling.
+    assert!(table.set(Fighter::Palutena, FxMode::Off));
+    assert_ne!(
+        decide(&table, true, SOURCE, Some(up_air())).forwarded,
+        REDUCED
+    );
     eff_variant::reset_for_test();
 }

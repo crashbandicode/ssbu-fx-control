@@ -394,3 +394,117 @@ pub(super) fn family_named(hash: u64) -> bool {
         .any(|profile| profile_role(*profile, hash) != Role::None)
         || global_role(hash) != Role::None
 }
+
+/// Keep and cull names of the character-wide tables. ssbu-fx-control builds
+/// its name-to-fighter map from these at compile time.
+pub(super) const GLOBAL_NAME_TABLES: &[&[&str]] = &[
+    PYRA_KEEP_NAMES,
+    PYRA_CULL_NAMES,
+    MYTHRA_KEEP_NAMES,
+    MYTHRA_CULL_NAMES,
+    BYLETH_KEEP_NAMES,
+    BYLETH_CULL_NAMES,
+    INKLING_KEEP_NAMES,
+    INKLING_CULL_NAMES,
+    GANONDORF_KEEP_NAMES,
+    GANONDORF_CULL_NAMES,
+    CHROMEXTRA_KEEP_NAMES,
+    CHROMEXTRA_CULL_NAMES,
+];
+
+/// Keep and cull names of the move-qualified tables, per profile (tests only).
+#[cfg(test)]
+pub(super) const PROFILE_NAME_TABLES: &[(Profile, &[&str], &[&str])] = &[
+    (
+        Profile::KazuyaFSmash,
+        KAZUYAFSMASH_KEEP_NAMES,
+        KAZUYAFSMASH_CULL_NAMES,
+    ),
+    (
+        Profile::FalconPunch,
+        FALCONPUNCH_KEEP_NAMES,
+        FALCONPUNCH_CULL_NAMES,
+    ),
+    (Profile::NessUpB, NESSUPB_KEEP_NAMES, NESSUPB_CULL_NAMES),
+    (Profile::LucasUpB, LUCASUPB_KEEP_NAMES, LUCASUPB_CULL_NAMES),
+    (
+        Profile::IkeNeutralB,
+        IKENEUTRALB_KEEP_NAMES,
+        IKENEUTRALB_CULL_NAMES,
+    ),
+    (
+        Profile::ChromNeutralB,
+        CHROMNEUTRALB_KEEP_NAMES,
+        CHROMNEUTRALB_CULL_NAMES,
+    ),
+    (
+        Profile::RoyNeutralB,
+        ROYNEUTRALB_KEEP_NAMES,
+        ROYNEUTRALB_CULL_NAMES,
+    ),
+    (
+        Profile::PalutenaRapidJab,
+        PALUTENARAPIDJAB_KEEP_NAMES,
+        PALUTENARAPIDJAB_CULL_NAMES,
+    ),
+    (
+        Profile::PalutenaNeutralB,
+        PALUTENANEUTRALB_KEEP_NAMES,
+        PALUTENANEUTRALB_CULL_NAMES,
+    ),
+    (
+        Profile::PalutenaUpB,
+        PALUTENAUPB_KEEP_NAMES,
+        PALUTENAUPB_CULL_NAMES,
+    ),
+    (
+        Profile::PalutenaSideB,
+        PALUTENASIDEB_KEEP_NAMES,
+        PALUTENASIDEB_CULL_NAMES,
+    ),
+    (
+        Profile::PalutenaUpSmash,
+        PALUTENAUPSMASH_KEEP_NAMES,
+        PALUTENAUPSMASH_CULL_NAMES,
+    ),
+    (
+        Profile::PalutenaTilts,
+        PALUTENATILTS_KEEP_NAMES,
+        PALUTENATILTS_CULL_NAMES,
+    ),
+    (
+        Profile::PalutenaWingSmash,
+        PALUTENAWINGSMASH_KEEP_NAMES,
+        PALUTENAWINGSMASH_CULL_NAMES,
+    ),
+    (
+        Profile::PalutenaUpAir,
+        PALUTENAUPAIR_KEEP_NAMES,
+        PALUTENAUPAIR_CULL_NAMES,
+    ),
+    (
+        Profile::EdgeFSmash,
+        EDGEFSMASH_KEEP_NAMES,
+        EDGEFSMASH_CULL_NAMES,
+    ),
+    (
+        Profile::EdgePurpleDash,
+        EDGEPURPLEDASH_KEEP_NAMES,
+        EDGEPURPLEDASH_CULL_NAMES,
+    ),
+    (
+        Profile::EdgeNeutralB,
+        EDGENEUTRALB_KEEP_NAMES,
+        EDGENEUTRALB_CULL_NAMES,
+    ),
+    (
+        Profile::EdgeDownB,
+        EDGEDOWNB_KEEP_NAMES,
+        EDGEDOWNB_CULL_NAMES,
+    ),
+    (
+        Profile::EdgeSideB,
+        EDGESIDEB_KEEP_NAMES,
+        EDGESIDEB_CULL_NAMES,
+    ),
+];

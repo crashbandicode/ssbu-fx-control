@@ -327,6 +327,23 @@ const RULES: &[Rule] = &[
     },
 ];
 
+/// One matching fighter context per move rule: `(profile, context)`, built
+/// from the rule's fighter kind, first motion and first status. Tests only.
+#[cfg(test)]
+pub(crate) fn rule_samples() -> impl Iterator<Item = (Profile, Context)> {
+    RULES.iter().map(|rule| {
+        (
+            rule.profile,
+            Context {
+                category: 0,
+                kind: rule.kind,
+                motion: rule.motions[0],
+                status: rule.statuses[0],
+            },
+        )
+    })
+}
+
 pub fn tracked(category: u8, kind: i32) -> bool {
     match category {
         0 => RULES.iter().any(|r| r.kind == kind),

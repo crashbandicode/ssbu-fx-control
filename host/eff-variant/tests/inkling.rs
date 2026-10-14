@@ -3,7 +3,7 @@ use std::io::Cursor;
 
 use eff_variant::append_reduced_sibling;
 use effect_library::NamcoEffectFile;
-use ssbu_online_deluxe_rewrite::eff_variant::{INK_MAX_BYTES, INK_REQUESTS};
+use ssbu_fx_control::eff_variant::{INK_MAX_BYTES, INK_REQUESTS};
 
 const INK: &str = "/tmp/eff-probe/out/effect__fighter__inkling__ef_inkling.eff";
 

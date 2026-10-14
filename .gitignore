@@ -1,0 +1,15 @@
+target/
+/dist/
+.env
+*.nro
+*.nso
+*.elf
+*.so
+*.zip
+*.log
+*.dmp
+*.eff
+/data.arc
+/local-assets/
+*.a
+__pycache__/

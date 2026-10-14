@@ -3,7 +3,7 @@ use std::io::Cursor;
 
 use eff_variant::{append_reduced_sibling, SiblingRequest};
 use effect_library::NamcoEffectFile;
-use ssbu_online_deluxe_rewrite::eff_variant::{EDGE_MAX_BYTES, EDGE_REQUESTS};
+use ssbu_fx_control::eff_variant::{EDGE_MAX_BYTES, EDGE_REQUESTS};
 
 const EDGE: &str = "/tmp/eff-probe/out/effect__fighter__edge__ef_edge.eff";
 const CHROM: &str = "/tmp/eff-probe/out/effect__fighter__chrom__ef_chrom.eff";

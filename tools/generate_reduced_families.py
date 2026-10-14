@@ -315,8 +315,28 @@ pub(super) fn family_named(hash: u64) -> bool {
         """    ];
     PROFILES.iter().any(|profile| profile_role(*profile, hash) != Role::None) || global_role(hash) != Role::None
 }
+
+/// Keep and cull names of the character-wide tables. ssbu-fx-control builds
+/// its name-to-fighter map from these at compile time.
+pub(super) const GLOBAL_NAME_TABLES: &[&[&str]] = &[
 """
     )
+    for prefix, _keep, _cull, _note in GLOBALS:
+        parts.append(f"    {prefix}_KEEP_NAMES,")
+        parts.append(f"    {prefix}_CULL_NAMES,")
+    parts.append(
+        """];
+
+/// Keep and cull names of the move-qualified tables, per profile (tests only).
+#[cfg(test)]
+pub(super) const PROFILE_NAME_TABLES: &[(Profile, &[&str], &[&str])] = &[
+"""
+    )
+    for prefix, profile, _keep, _cull, _note in PROFILES:
+        parts.append(
+            f"    (Profile::{profile}, {prefix}_KEEP_NAMES, {prefix}_CULL_NAMES),"
+        )
+    parts.append("];\n")
     return "\n".join(parts) + "\n"
 
 

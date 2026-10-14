@@ -5,8 +5,11 @@
 //! stack and do not invent a return value.
 //! Mirrors the supplied FX mod's stack bridge, with bounded primitive storage,
 //! no per-frame allocation and an unchanged original call after substitution.
-use super::{fx_mode, fx_scope_allows, record, Code};
-use crate::{acmd::Value, config::FxMode, effects_reduced::FxIntent};
+//!
+//! Ported from Online Deluxe `src/runtime/acmd.rs`: each effect name takes the
+//! mode of the fighter that owns it (`crate::policy`).
+use super::{record, Code, TABLE};
+use crate::{acmd::Value, effects_reduced::FxIntent, policy};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 #[repr(C)]
@@ -36,9 +39,11 @@ fn reject(path: u64, reason: u64) {
 }
 
 unsafe fn filter(lua_state: u64, path: u64, calls: &AtomicU64, hash_count: usize) {
-    let mode = fx_mode();
-    let scope = fx_scope_allows();
-    if lua_state == 0 || mode == FxMode::On || (mode == FxMode::Off && !scope) {
+    if lua_state == 0 || !TABLE.any_active() {
+        return;
+    }
+    let scope = super::scope_allows();
+    if TABLE.idle(scope) {
         return;
     }
     let count = calls.fetch_add(1, Ordering::Relaxed) + 1;
@@ -55,16 +60,10 @@ unsafe fn filter(lua_state: u64, path: u64, calls: &AtomicU64, hash_count: usize
     if count == 1 || count.is_multiple_of(256) {
         record(Code::AcmdEffectSeen, path, args[0].raw);
     }
-    let context = if args[..hash_count].iter().any(|v| match mode {
-        FxMode::Off => {
-            crate::effects::rewrite(FxMode::Off, v.raw) == v.raw
-                && crate::effects::needs_context(v.raw)
-        }
-        FxMode::Reduced => {
-            crate::effects_reduced::reduced_named(v.raw) || crate::eff_variant::wants_context(v.raw)
-        }
-        FxMode::On => false,
-    }) {
+    let context = if args[..hash_count]
+        .iter()
+        .any(|v| policy::needs_context(v.raw))
+    {
         super::effect_context::from_lua(lua_state)
     } else {
         None
@@ -74,12 +73,11 @@ unsafe fn filter(lua_state: u64, path: u64, calls: &AtomicU64, hash_count: usize
     let mut variant = [false; 2];
     let mut changed = false;
     for index in 0..hash_count {
-        intents[index] = crate::effects_reduced::classify(mode, scope, args[index].raw, context);
-        let requested = crate::effects_reduced::request_hash(intents[index], args[index].raw);
-        let next = crate::eff_variant::forward(mode, scope, requested, context);
-        forwarded[index] = next;
-        variant[index] = next != requested;
-        if next != args[index].raw {
+        let decision = policy::decide(&TABLE, scope, args[index].raw, context);
+        intents[index] = decision.intent;
+        forwarded[index] = decision.forwarded;
+        variant[index] = decision.forwarded != decision.requested;
+        if decision.forwarded != args[index].raw {
             changed = true;
         }
     }
@@ -102,7 +100,7 @@ unsafe fn filter(lua_state: u64, path: u64, calls: &AtomicU64, hash_count: usize
     for index in 0..hash_count {
         if variant[index] {
             let swaps = crate::eff_variant::observe_swap(args[index].raw);
-            if swaps == 1 || swaps.is_multiple_of(128) || super::api_trace::start() != 0 {
+            if swaps == 1 || swaps.is_multiple_of(128) {
                 record(
                     Code::FxVariantUse,
                     crate::eff_variant::source_file(args[index].raw),
@@ -133,7 +131,7 @@ unsafe fn filter(lua_state: u64, path: u64, calls: &AtomicU64, hash_count: usize
             FxIntent::Suppress => total <= 32 || total.is_multiple_of(128),
             _ => total == 1 || total.is_multiple_of(128),
         };
-        if sample || super::api_trace::start() != 0 {
+        if sample {
             record(code, originals[index], (path << 32) | total);
         }
         if changed && scope {
@@ -170,64 +168,64 @@ macro_rules! effect_hook {
 // and EFFECT_FOLLOW. Alpha/no-stop/position variants cover the existing policy.
 effect_hook!(
     effect,
-    deluxe_rewrite_filter_effect,
+    ssbu_fx_control_filter_effect,
     "\u{1}_ZN3app10sv_animcmd6EFFECTEP9lua_State",
     0x110
 );
 effect_hook!(
     follow,
-    deluxe_rewrite_filter_follow,
+    ssbu_fx_control_filter_follow,
     "\u{1}_ZN3app10sv_animcmd13EFFECT_FOLLOWEP9lua_State",
     0x111
 );
 effect_hook!(
     alpha,
-    deluxe_rewrite_filter_alpha,
+    ssbu_fx_control_filter_alpha,
     "\u{1}_ZN3app10sv_animcmd19EFFECT_FOLLOW_ALPHAEP9lua_State",
     0x112
 );
 effect_hook!(
     no_stop,
-    deluxe_rewrite_filter_no_stop,
+    ssbu_fx_control_filter_no_stop,
     "\u{1}_ZN3app10sv_animcmd21EFFECT_FOLLOW_NO_STOPEP9lua_State",
     0x113
 );
 effect_hook!(
     pos,
-    deluxe_rewrite_filter_pos,
+    ssbu_fx_control_filter_pos,
     "\u{1}_ZN3app10sv_animcmd14EFFECT_FLW_POSEP9lua_State",
     0x114
 );
 effect_hook!(
     pos_no_stop,
-    deluxe_rewrite_filter_pos_no_stop,
+    ssbu_fx_control_filter_pos_no_stop,
     "\u{1}_ZN3app10sv_animcmd22EFFECT_FLW_POS_NO_STOPEP9lua_State",
     0x115
 );
 
 effect_hook!(
     landing,
-    deluxe_rewrite_filter_landing,
+    ssbu_fx_control_filter_landing,
     "\u{1}_ZN3app10sv_animcmd14LANDING_EFFECTEP9lua_State",
     0x116
 );
 effect_hook!(
     flip,
-    deluxe_rewrite_filter_flip,
+    ssbu_fx_control_filter_flip,
     "\u{1}_ZN3app10sv_animcmd18EFFECT_FOLLOW_FLIPEP9lua_State",
     0x117,
     2
 );
 effect_hook!(
     flip_alpha,
-    deluxe_rewrite_filter_flip_alpha,
+    ssbu_fx_control_filter_flip_alpha,
     "\u{1}_ZN3app10sv_animcmd24EFFECT_FOLLOW_FLIP_ALPHAEP9lua_State",
     0x118,
     2
 );
 effect_hook!(
     flip_no_stop,
-    deluxe_rewrite_filter_flip_no_stop,
+    ssbu_fx_control_filter_flip_no_stop,
     "\u{1}_ZN3app10sv_animcmd26EFFECT_FOLLOW_NO_STOP_FLIPEP9lua_State",
     0x119,
     2
@@ -288,7 +286,7 @@ unsafe fn read_detach_flags(lua_state: u64) -> Option<DetachFlags> {
 }
 
 #[skyline::hook(replace = effect_off_kind)]
-unsafe fn deluxe_acmd_cleanup_off_kind(lua_state: u64) {
+unsafe fn ssbu_fx_control_acmd_cleanup_off_kind(lua_state: u64) {
     if let Some(saved) = read_off_flags(lua_state) {
         if let Some(alias) = crate::eff_variant::cleanup_alias(saved.hash) {
             let accessor = super::effect_context::module_accessor(lua_state);
@@ -311,7 +309,7 @@ unsafe fn deluxe_acmd_cleanup_off_kind(lua_state: u64) {
 }
 
 #[skyline::hook(replace = effect_detach_kind)]
-unsafe fn deluxe_acmd_cleanup_detach_kind(lua_state: u64) {
+unsafe fn ssbu_fx_control_acmd_cleanup_detach_kind(lua_state: u64) {
     if let Some(saved) = read_detach_flags(lua_state) {
         if let Some(alias) = crate::eff_variant::cleanup_alias(saved.hash) {
             let accessor = super::effect_context::module_accessor(lua_state);
@@ -348,16 +346,24 @@ pub(super) fn install() {
             }
         };
     }
-    install!(effect, deluxe_rewrite_filter_effect, 0x110);
-    install!(follow, deluxe_rewrite_filter_follow, 0x111);
-    install!(alpha, deluxe_rewrite_filter_alpha, 0x112);
-    install!(no_stop, deluxe_rewrite_filter_no_stop, 0x113);
-    install!(pos, deluxe_rewrite_filter_pos, 0x114);
-    install!(pos_no_stop, deluxe_rewrite_filter_pos_no_stop, 0x115);
-    install!(landing, deluxe_rewrite_filter_landing, 0x116);
-    install!(flip, deluxe_rewrite_filter_flip, 0x117);
-    install!(flip_alpha, deluxe_rewrite_filter_flip_alpha, 0x118);
-    install!(flip_no_stop, deluxe_rewrite_filter_flip_no_stop, 0x119);
-    install!(effect_off_kind, deluxe_acmd_cleanup_off_kind, 0x11a);
-    install!(effect_detach_kind, deluxe_acmd_cleanup_detach_kind, 0x11b);
+    install!(effect, ssbu_fx_control_filter_effect, 0x110);
+    install!(follow, ssbu_fx_control_filter_follow, 0x111);
+    install!(alpha, ssbu_fx_control_filter_alpha, 0x112);
+    install!(no_stop, ssbu_fx_control_filter_no_stop, 0x113);
+    install!(pos, ssbu_fx_control_filter_pos, 0x114);
+    install!(pos_no_stop, ssbu_fx_control_filter_pos_no_stop, 0x115);
+    install!(landing, ssbu_fx_control_filter_landing, 0x116);
+    install!(flip, ssbu_fx_control_filter_flip, 0x117);
+    install!(flip_alpha, ssbu_fx_control_filter_flip_alpha, 0x118);
+    install!(flip_no_stop, ssbu_fx_control_filter_flip_no_stop, 0x119);
+    install!(
+        effect_off_kind,
+        ssbu_fx_control_acmd_cleanup_off_kind,
+        0x11a
+    );
+    install!(
+        effect_detach_kind,
+        ssbu_fx_control_acmd_cleanup_detach_kind,
+        0x11b
+    );
 }

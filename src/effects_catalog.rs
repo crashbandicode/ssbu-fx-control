@@ -1397,6 +1397,37 @@ pub fn scoped(profile: Profile, hash: u64) -> bool {
     hashes.binary_search(&hash).is_ok()
 }
 
+/// Off-table names of one move profile (ssbu-fx-control fighter-map tests).
+#[cfg(test)]
+pub(crate) fn profile_names(profile: Profile) -> &'static [&'static str] {
+    match profile {
+        Profile::KazuyaFSmash => KAZUYA_F_SMASH_NAMES,
+        Profile::FalconPunch => FALCON_PUNCH_NAMES,
+        Profile::NessUpB => NESS_UP_B_NAMES,
+        Profile::LucasUpB => LUCAS_UP_B_NAMES,
+        Profile::IkeNeutralB => IKE_NEUTRAL_B_NAMES,
+        Profile::ChromNeutralB => CHROM_NEUTRAL_B_NAMES,
+        Profile::RoyNeutralB => ROY_NEUTRAL_B_NAMES,
+        Profile::PalutenaRapidJab => PALUTENA_RAPID_JAB_NAMES,
+        Profile::PalutenaNeutralB => PALUTENA_NEUTRAL_B_NAMES,
+        Profile::PalutenaUpB => PALUTENA_UP_B_NAMES,
+        Profile::PalutenaSideB => PALUTENA_SIDE_B_NAMES,
+        Profile::PalutenaUpSmash => PALUTENA_UP_SMASH_NAMES,
+        Profile::PalutenaTilts => PALUTENA_TILTS_NAMES,
+        Profile::PalutenaWingSmash => PALUTENA_WING_SMASH_NAMES,
+        Profile::PalutenaUpAir => PALUTENA_UP_AIR_NAMES,
+        Profile::EdgeNeutralB => EDGE_NEUTRAL_B_NAMES,
+        Profile::EdgeDownB => EDGE_DOWN_B_NAMES,
+        Profile::EdgePurpleDash => EDGE_PURPLE_DASH_NAMES,
+        Profile::EdgeFSmash => EDGE_F_SMASH_NAMES,
+        Profile::EdgeSideB => &[],
+    }
+}
+
+/// Names that need an actor context (ssbu-fx-control fighter-map tests).
+#[cfg(test)]
+pub(crate) const CONTEXT_NAME_LIST: &[&str] = CONTEXT_NAMES;
+
 #[cfg(test)]
 mod tests {
     use super::*;
