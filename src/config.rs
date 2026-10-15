@@ -1,17 +1,25 @@
-//! Modes, scope and the plugin's own INI (`sd:/ultimate/ssbu_fx_control/config.ini`).
+//! Modes, scope, per-move variant selection and the plugin's own INI
+//! (`sd:/ultimate/ssbu_fx_control/config.ini`).
 //!
 //! ```ini
-//! scope=online        # online | all
-//! all=on              # on | off | reduced; written only while every row agrees
-//! kazuya=on           # one line per covered fighter: on | off | reduced
+//! scope=online             # online | all
+//! all=on                   # on | off | reduced; written only while every row agrees
+//! kazuya=on                # one line per covered fighter: on | off | reduced
+//! variant.kirby_hammer=2   # Reduced variant per move (0 = original); written when not the default
+//! cull=eflame_sword_open   # harness: extra names nulled under Reduced (comma separated)
 //! ```
 //!
 //! Loading applies `all=` first and then every fighter line, whatever the line
 //! order, so a fighter line always wins over `all=`. Unknown keys, comments and
 //! values that do not parse are ignored on load and preserved on save. A
 //! `reduced` value for a fighter without a Reduced variant is ignored (the row
-//! stays at its default, On); it never becomes Off.
+//! stays at its default, On); it never becomes Off. `variant.<move>` takes 0
+//! to the move's variant count; anything else keeps the default (1 where the
+//! move has a variant). `cull=` names must carry a covered fighter's prefix;
+//! the line is read, never rewritten (the menu cannot change it).
+use crate::effects::hash40;
 use crate::fighters::{self, Fighter, COUNT};
+use crate::moves::{self, Selection};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(u8)]
@@ -114,10 +122,75 @@ pub const fn accepted(mode: FxMode, has_reduced: bool) -> Option<FxMode> {
     }
 }
 
+/// Most names the harness `cull=` line accepts.
+pub const CULL_MAX: usize = 16;
+
+/// Extra names nulled under Reduced (the bisection list), with the fighter
+/// each name's prefix names.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CullList {
+    pub hashes: [u64; CULL_MAX],
+    pub fighters: [u8; CULL_MAX],
+    pub len: u8,
+}
+
+impl Default for CullList {
+    fn default() -> Self {
+        Self {
+            hashes: [0; CULL_MAX],
+            fighters: [0; CULL_MAX],
+            len: 0,
+        }
+    }
+}
+
+impl CullList {
+    pub fn parse(value: &str) -> Self {
+        let mut list = Self::default();
+        for name in value
+            .split(',')
+            .map(str::trim)
+            .filter(|name| !name.is_empty())
+        {
+            if usize::from(list.len) == CULL_MAX {
+                break;
+            }
+            let Some(fighter) = fighters::name_fighter(name) else {
+                continue;
+            };
+            let slot = usize::from(list.len);
+            list.hashes[slot] = hash40(name);
+            list.fighters[slot] = fighter as u8;
+            list.len += 1;
+        }
+        list
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    pub fn entries(&self) -> impl Iterator<Item = (u64, Fighter)> + '_ {
+        self.hashes[..usize::from(self.len)]
+            .iter()
+            .zip(&self.fighters)
+            .map(|(hash, fighter)| (*hash, fighters::ALL[usize::from(*fighter)]))
+    }
+
+    pub fn owner(&self, hash: u64) -> Option<Fighter> {
+        self.entries()
+            .find(|(listed, _)| *listed == hash)
+            .map(|(_, fighter)| fighter)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Settings {
     pub scope: FxScope,
     pub modes: [FxMode; COUNT],
+    /// Reduced variant per move (`moves::MOVES` order); 0 keeps the move original.
+    pub variants: Selection,
+    pub cull: CullList,
 }
 
 impl Default for Settings {
@@ -125,6 +198,8 @@ impl Default for Settings {
         Self {
             scope: FxScope::Online,
             modes: [FxMode::On; COUNT],
+            variants: moves::default_selection(),
+            cull: CullList::default(),
         }
     }
 }
@@ -142,6 +217,8 @@ impl Settings {
 pub fn reduced_support() -> [bool; COUNT] {
     fighters::ALL.map(Fighter::has_reduced)
 }
+
+const VARIANT_PREFIX: &str = "variant.";
 
 fn assignment(line: &str) -> Option<(&str, &str)> {
     let line = line.trim();
@@ -172,6 +249,7 @@ pub fn parse(text: &str) -> Settings {
                     settings.scope = scope;
                 }
             }
+            "cull" => settings.cull = CullList::parse(value),
             _ => {}
         }
     }
@@ -182,6 +260,14 @@ pub fn parse(text: &str) -> Settings {
             {
                 settings.modes[fighter.index()] = mode;
             }
+        } else if let Some(id) = key.strip_prefix(VARIANT_PREFIX) {
+            if let Some(index) = moves::by_id(id) {
+                if let Ok(number) = value.parse::<u8>() {
+                    if usize::from(number) <= moves::MOVES[index].variants.len() {
+                        settings.variants[index] = number;
+                    }
+                }
+            }
         }
     }
     settings
@@ -190,6 +276,9 @@ pub fn parse(text: &str) -> Settings {
 const HEADER: &str = "# ssbu-fx-control. Values: on | off | reduced. scope: online | all.
 # The all key is applied first and every fighter line overrides it. It is
 # written only while every fighter has the same value.
+# variant.<move>=N selects a Reduced variant per move (0 = original); the
+# default (variant 1) is not written. cull=<name>,<name> is the measurement
+# harness: extra requests nulled while that fighter is Reduced.
 ";
 
 /// Renders `settings` over `existing`: known keys are rewritten in place (the
@@ -197,12 +286,18 @@ const HEADER: &str = "# ssbu-fx-control. Values: on | off | reduced. scope: onli
 /// appended in menu order, and every other line is kept as it was.
 pub fn render(existing: &str, settings: &Settings) -> String {
     let all = settings.all();
+    let defaults = moves::default_selection();
     let value_for = |key: &str| -> Option<Option<String>> {
         match key {
             "scope" => Some(Some(settings.scope.token().to_owned())),
             "all" => Some(all.map(|mode| mode.token().to_owned())),
             _ => {
-                Fighter::from_id(key).map(|fighter| Some(settings.mode(fighter).token().to_owned()))
+                if let Some(fighter) = Fighter::from_id(key) {
+                    return Some(Some(settings.mode(fighter).token().to_owned()));
+                }
+                let index = key.strip_prefix(VARIANT_PREFIX).and_then(moves::by_id)?;
+                let number = settings.variants[index];
+                Some((number != defaults[index]).then(|| number.to_string()))
             }
         }
     };
@@ -233,9 +328,14 @@ pub fn render(existing: &str, settings: &Settings) -> String {
             }
         }
     }
+    let variant_keys: Vec<String> = moves::MOVES
+        .iter()
+        .map(|mv| format!("{VARIANT_PREFIX}{}", mv.id))
+        .collect();
     let order = ["scope", "all"]
         .into_iter()
-        .chain(fighters::ALL.iter().map(|fighter| fighter.id()));
+        .chain(fighters::ALL.iter().map(|fighter| fighter.id()))
+        .chain(variant_keys.iter().map(String::as_str));
     for key in order {
         if written.iter().any(|done| done == key) {
             continue;
@@ -258,6 +358,8 @@ mod tests {
         assert_eq!(settings.scope, FxScope::Online);
         assert!(settings.modes.iter().all(|mode| *mode == FxMode::On));
         assert_eq!(settings.all(), Some(FxMode::On));
+        assert_eq!(settings.variants, moves::default_selection());
+        assert!(settings.cull.is_empty());
     }
 
     #[test]
@@ -268,11 +370,18 @@ mod tests {
         };
         settings.modes[Fighter::Kazuya.index()] = FxMode::Off;
         settings.modes[Fighter::Inkling.index()] = FxMode::Reduced;
+        let kirby = moves::by_id("kirby_hammer").unwrap();
+        settings.variants[kirby] = 3;
         let text = render("", &settings);
         assert!(text.starts_with("# ssbu-fx-control"));
         assert!(text.contains("scope=all\n"));
         assert!(text.contains("kazuya=off\n"));
         assert!(text.contains("inkling=reduced\n"));
+        assert!(text.contains("variant.kirby_hammer=3\n"));
+        assert!(
+            !text.contains("variant.pyra_side_b="),
+            "default variants are not written:\n{text}"
+        );
         assert!(
             !text.contains("all="),
             "mixed rows write no all= line:\n{text}"
@@ -292,6 +401,8 @@ mod tests {
         assert_eq!(settings.all(), None);
         let uniform = parse("all=reduced\n");
         assert_eq!(uniform.all(), Some(FxMode::Reduced));
+        assert_eq!(uniform.mode(Fighter::Kazuya), FxMode::On, "no variant: On");
+        assert_eq!(uniform.mode(Fighter::Kirby), FxMode::Reduced);
         let text = render("", &uniform);
         assert!(text.contains("all=reduced\n"));
         assert_eq!(parse(&text), uniform);
@@ -316,6 +427,53 @@ mod tests {
             assert!(out.contains(&format!("{}=", fighter.id())), "{fighter:?}");
         }
         assert_eq!(parse(&out), settings);
+    }
+
+    #[test]
+    fn variant_lines_select_per_move_and_bad_numbers_keep_the_default() {
+        let kirby = moves::by_id("kirby_hammer").unwrap();
+        let pyra = moves::by_id("pyra_side_b").unwrap();
+        let settings = parse(
+            "variant.kirby_hammer=0\nvariant.pyra_side_b=3\nvariant.pyra_up_b=9\nvariant.not_a_move=1\nvariant.ness_pk_fire=x\n",
+        );
+        assert_eq!(settings.variants[kirby], 0);
+        assert_eq!(settings.variants[pyra], 3);
+        assert_eq!(settings.variants[moves::by_id("pyra_up_b").unwrap()], 1);
+        assert_eq!(settings.variants[moves::by_id("ness_pk_fire").unwrap()], 1);
+        // A variant line back at the default is dropped on rewrite; a
+        // non-default one is rewritten in place.
+        let mut back = settings;
+        back.variants[pyra] = 1;
+        let out = render("variant.pyra_side_b=3\nvariant.kirby_hammer=0\n", &back);
+        assert!(
+            out.starts_with("variant.kirby_hammer=0\nscope=online\n"),
+            "{out}"
+        );
+        assert!(!out.contains("variant.pyra_side_b"), "{out}");
+        assert_eq!(out.matches("variant.").count(), 1);
+        assert_eq!(parse(&out), back);
+    }
+
+    #[test]
+    fn cull_line_lists_prefixed_names_and_is_preserved_verbatim() {
+        let text = "cull= eflame_sword_open ,kirby_onigoroshi_arc, sys_flash, nobody_knows,\n";
+        let settings = parse(text);
+        assert_eq!(settings.cull.len, 2);
+        assert_eq!(
+            settings.cull.owner(hash40("eflame_sword_open")),
+            Some(Fighter::Pyra)
+        );
+        assert_eq!(
+            settings.cull.owner(hash40("kirby_onigoroshi_arc")),
+            Some(Fighter::Kirby)
+        );
+        assert_eq!(settings.cull.owner(hash40("sys_flash")), None);
+        let out = render(text, &settings);
+        assert!(out.starts_with(text), "{out}");
+        assert_eq!(parse(&out).cull, settings.cull);
+        let many: Vec<String> = (0..CULL_MAX + 4).map(|n| format!("kirby_x{n}")).collect();
+        let full = CullList::parse(&many.join(","));
+        assert_eq!(usize::from(full.len), CULL_MAX);
     }
 
     #[test]

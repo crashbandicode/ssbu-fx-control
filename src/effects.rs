@@ -339,8 +339,15 @@ mod tests {
             assert_eq!(rewrite(FxMode::On, hash), hash);
             // Off still nulls TARGET_HASHES here. Reduced does not.
             assert_eq!(rewrite(FxMode::Reduced, hash), hash);
-            let intent = crate::effects_reduced::classify(FxMode::Reduced, true, hash, None);
-            if !crate::effects_reduced::unscoped(hash) {
+            let intent = crate::effects_reduced::classify(
+                FxMode::Reduced,
+                true,
+                hash,
+                None,
+                &crate::moves::default_selection(),
+                false,
+            );
+            if crate::moves::move_of(hash, None).is_none() {
                 assert_eq!(
                     crate::effects_reduced::request_hash(intent, hash),
                     hash,

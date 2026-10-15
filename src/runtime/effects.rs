@@ -95,7 +95,35 @@ fn critical(hash: u64, path: u64) -> bool {
     )
 }
 
+/// `TRACE_EFFECTS`: report the first request of each (name, actor) pair.
+unsafe fn trace_request(accessor: *mut OpaqueAccessor, hash: u64) {
+    use crate::trace::{self, Key};
+    let context = super::effect_context::raw_from_accessor(accessor.cast());
+    let (category, kind, status) =
+        context.map_or((0xff, -1, -1), |c| (c.category, c.kind, c.status));
+    let key = Key {
+        hash,
+        category,
+        kind,
+        status,
+    };
+    if let Some(ordinal) = super::TRACE.first_seen(key) {
+        record(Code::FxTrace, hash, trace::pack(key, ordinal));
+    }
+}
+
+fn latch_trace() {
+    let present = std::path::Path::new(super::DATA_DIR)
+        .join(super::TRACE_MARKER)
+        .exists();
+    super::TRACE.enable(present);
+    record(Code::FxTrace, 0, u64::from(present));
+}
+
 unsafe fn policy_hash(accessor: *mut OpaqueAccessor, hash: u64) -> u64 {
+    if super::TRACE.enabled() {
+        trace_request(accessor, hash);
+    }
     if critical(hash, crate::critical_probe::PATH_ORDINARY) {
         return effects::NULL_EFFECT;
     }
@@ -522,6 +550,7 @@ unsafe fn ssbu_fx_control_cleanup_detach_kind(
 
 pub(super) fn install() {
     latch_critical_probe();
+    latch_trace();
     super::variant::install();
     // Online Deluxe's scene hooks are not ported; `super::online` decides
     // whether this plugin needs its own online signal.

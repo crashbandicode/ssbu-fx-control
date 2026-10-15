@@ -21,6 +21,9 @@ mythra=on
 byleth=on
 inkling=on
 ganondorf=on
+kirby=on
+variant.kirby_hammer=2       # Reduced variant per move, 0 = original; default 1 is not written
+cull=eflame_sword_open       # harness: extra names nulled while that fighter is Reduced
 ```
 
 - The file is created with these defaults on first start
@@ -33,8 +36,19 @@ ganondorf=on
 - Unknown keys, comments and lines that do not parse are ignored on load and
   kept when the plugin rewrites the file. A bad value keeps that row's default.
 - `reduced` on a fighter without a Reduced variant is ignored (the row stays
-  On). Today every covered fighter has one; the rule is there so a future row
-  without a variant can never turn Reduced into Off.
+  On): Kazuya, Ike, Roy and Ganondorf have Off tables only in 0.2.
+- `variant.<move>=N`: the Reduced variant for one move of `src/moves.rs`
+  (`falcon_punch`, `pyra_side_b`, `pyra_neutral_b`, `pyra_up_b`,
+  `mythra_specials`, `palutena_explosive_flame`, `ness_pk_thunder`,
+  `ness_pk_fire`, `lucas_pk_thunder`, `kirby_hammer`, `byleth_specials`,
+  `inkling_roller`, `sephiroth_gigaflare`). 0 keeps that move original while
+  the row is Reduced; a number above the move's variant count keeps the
+  default (1). The plugin writes the line only when the value is not the
+  default. See [HARNESS](HARNESS.md).
+- `cull=<name>,<name>`: up to 16 request names, each with a covered
+  fighter's prefix, nulled while that fighter's row is Reduced and the scope
+  allows. A name without a known prefix is skipped. Read at start, kept
+  verbatim on rewrite; the menu cannot change it.
 - Edits by hand take effect on the next game start.
 
 [`config/eden-test.ini`](../config/eden-test.ini) is the offline test override
@@ -80,6 +94,7 @@ The plugin needs nothing from Deluxe beyond the plugin-API table and
 | --- | --- |
 | `DISABLE` | Skips every hook and the menu registration. The INI is still loaded and the logs still written. |
 | `PROBE_CRITICAL_SCREEN` | Diagnostic only, latched at startup: while **every** fighter row is Off and the scope allows, the eighteen exact `bg_criticalhit` / `sys_bg_criticalhit` Special Zoom background names are suppressed. Keep it absent from normal installs. |
+| `TRACE_EFFECTS` | Harness only, latched at startup: every request hook records the first request of each (name, actor category, kind, status) as event code 110, up to 512 per boot. Decode with `tools/resolve_trace.py`. Reads the actor's context for every request; keep it absent from measurement captures and normal installs. |
 
 ## Diagnostics
 
@@ -113,6 +128,7 @@ Event codes keep their Online Deluxe numbers:
 | 94 / 95 | Sibling cleanup / cleanup route |
 | 96 / 97 | Special Zoom probe request / marker latched |
 | 99 | Menu registration (`a` handle or negative error, `-100` no host; `b` descriptor version) |
+| 110 | `TRACE_EFFECTS`: first request of a (name, actor) pair (`a` Hash40; `b` bits 0–7 category, 8–23 kind, 24–39 status, 40–55 ordinal). At startup `a` = 0, `b` = 1 when the marker was latched |
 
 Hook ids: 256 to 265 are the EffectModule request, screen, `kill_kind` and
 `detach_kind` hooks; `0x110` to `0x11b` the ACMD commands; `0x16ccab8` and

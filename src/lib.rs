@@ -17,9 +17,11 @@ mod effects_catalog;
 pub mod effects_reduced;
 pub mod fighters;
 pub mod menu;
+pub mod moves;
 pub mod persist;
 pub mod policy;
 pub mod scope;
+pub mod trace;
 
 pub mod build_info {
     include!(concat!(env!("OUT_DIR"), "/build_info.rs"));

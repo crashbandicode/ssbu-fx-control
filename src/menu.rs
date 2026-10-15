@@ -227,7 +227,7 @@ mod tests {
             Err(RegisterError::HostMissing)
         );
         const { assert!(OPTION_COUNT <= deluxe_plugin_sdk::abi::MAX_OPTIONS) };
-        assert_eq!(OPTION_COUNT, 17);
+        assert_eq!(OPTION_COUNT, 18, "scope, all, 15 fighters, status");
         assert!(SPEC.own_page);
     }
 

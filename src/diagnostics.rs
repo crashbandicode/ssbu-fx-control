@@ -86,6 +86,11 @@ pub enum Code {
     /// error as two's complement (`-100` no host, `-101` incompatible host),
     /// `b` the accepted descriptor version (0 on error).
     PluginRegistered = 99,
+    /// `TRACE_EFFECTS` harness: the first request of a (name, actor category,
+    /// kind, status) combination. `a` is the Hash40, `b` packs category, kind,
+    /// status and the ordinal (`trace::pack`). At startup `a` = 0 and `b` = 1
+    /// records that the marker was latched.
+    FxTrace = 110,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

@@ -49,7 +49,16 @@ pub fn replacements(
     }
     for index in 0..hash_count {
         if matches!(args[index].kind, 2 | 7) {
-            let intent = crate::effects_reduced::classify(mode, true, args[index].raw, context);
+            // Host-side mirror of the ACMD path with the default variant
+            // selection and no harness cull list; the runtime asks `policy::decide`.
+            let intent = crate::effects_reduced::classify(
+                mode,
+                true,
+                args[index].raw,
+                context,
+                &crate::moves::default_selection(),
+                false,
+            );
             let hash = crate::effects_reduced::request_hash(intent, args[index].raw);
             let hash = crate::eff_variant::forward(mode, true, hash, context);
             result[index] = (hash != args[index].raw).then_some(hash);

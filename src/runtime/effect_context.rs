@@ -60,3 +60,22 @@ pub(super) unsafe fn from_accessor(accessor: *mut c_void) -> Option<Context> {
     }
     capture(accessor, category, object_kind(accessor))
 }
+
+/// Harness trace only: the same reads for any fighter or weapon, tracked or
+/// not, so an uncovered move's layers can be listed.
+pub(super) unsafe fn raw_from_accessor(accessor: *mut c_void) -> Option<Context> {
+    if accessor.is_null() {
+        return None;
+    }
+    let id = *accessor.cast::<u8>().add(8).cast::<u32>();
+    let category = (id >> 28) as u8;
+    if category > 1 {
+        return None;
+    }
+    Some(Context {
+        category,
+        kind: object_kind(accessor),
+        motion: motion_kind(accessor),
+        status: status_kind(accessor),
+    })
+}

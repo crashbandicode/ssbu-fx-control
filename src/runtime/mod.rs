@@ -19,9 +19,13 @@ use crate::{
 
 pub(super) static RECORDER: Recorder = Recorder::new();
 pub(super) static TABLE: ModeTable = ModeTable::new();
+/// `TRACE_EFFECTS` harness trace (code 110), latched at install.
+pub(super) static TRACE: crate::trace::Trace = crate::trace::Trace::new();
 pub(super) const DATA_DIR: &str = "sd:/ultimate/ssbu_fx_control";
 /// Marker file under [`DATA_DIR`] that skips every hook.
 const DISABLE_MARKER: &str = "DISABLE";
+/// Marker file under [`DATA_DIR`] that turns on the request trace.
+pub(super) const TRACE_MARKER: &str = "TRACE_EFFECTS";
 
 pub(super) fn record(code: Code, a: u64, b: u64) {
     let tick = unsafe { skyline::nn::os::GetSystemTick() as u64 };

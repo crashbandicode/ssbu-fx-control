@@ -1484,8 +1484,14 @@ mod tests {
                 );
                 assert_eq!(rewrite_with_context(FxMode::On, hash, Some(context)), hash);
                 // rewrite_with_context is the Off path. Reduced forwarding is request_hash.
-                let intent =
-                    crate::effects_reduced::classify(FxMode::Reduced, true, hash, Some(context));
+                let intent = crate::effects_reduced::classify(
+                    FxMode::Reduced,
+                    true,
+                    hash,
+                    Some(context),
+                    &crate::moves::default_selection(),
+                    false,
+                );
                 let forwarded = crate::effects_reduced::request_hash(intent, hash);
                 if name == "ness_pkt_attack" {
                     assert_eq!(
@@ -1525,10 +1531,11 @@ mod tests {
             motion: hash40("special_s"),
             status: 0x1dd,
         };
+        let selection = crate::moves::default_selection();
         for name in LEGACY_NAMES.iter().chain(CONTEXT_NAMES) {
             let hash = hash40(name);
             assert_eq!(rewrite_with_context(FxMode::On, hash, Some(actor)), hash);
-            let intent = classify(FxMode::Reduced, true, hash, Some(actor));
+            let intent = classify(FxMode::Reduced, true, hash, Some(actor), &selection, false);
             match intent {
                 FxIntent::ReducedCull => assert_eq!(request_hash(intent, hash), NULL_EFFECT),
                 FxIntent::ReducedKeep | FxIntent::ReducedPreserve | FxIntent::Passthrough => {
@@ -1538,21 +1545,21 @@ mod tests {
             }
         }
         let fake = hash40("palutena_explosiveflame");
-        let fake_intent = classify(FxMode::Reduced, true, fake, Some(actor));
+        let fake_intent = classify(FxMode::Reduced, true, fake, Some(actor), &selection, false);
         assert_eq!(fake_intent, FxIntent::Passthrough);
         assert_eq!(request_hash(fake_intent, fake), fake);
         let bomb = hash40("palutena_bomb");
-        let bomb_intent = classify(FxMode::Reduced, true, bomb, Some(actor));
+        let bomb_intent = classify(FxMode::Reduced, true, bomb, Some(actor), &selection, false);
         assert_eq!(bomb_intent, FxIntent::ReducedKeep);
         assert_eq!(request_hash(bomb_intent, bomb), bomb);
         for name in ["palutena_bomb_appear", "palutena_wand_light_trace"] {
             let hash = hash40(name);
-            let intent = classify(FxMode::Reduced, true, hash, Some(actor));
+            let intent = classify(FxMode::Reduced, true, hash, Some(actor), &selection, false);
             assert_eq!(intent, FxIntent::ReducedCull, "{name}");
             assert_eq!(request_hash(intent, hash), NULL_EFFECT, "{name}");
         }
         let burst = hash40("edge_fire3_burst");
-        let burst_intent = classify(FxMode::Reduced, true, burst, Some(actor));
+        let burst_intent = classify(FxMode::Reduced, true, burst, Some(actor), &selection, false);
         assert_eq!(burst_intent, FxIntent::ReducedPreserve);
         assert_eq!(request_hash(burst_intent, burst), burst);
     }
@@ -1624,7 +1631,14 @@ mod tests {
             assert_eq!(rewrite(FxMode::On, hash), hash, "{name}");
             assert_eq!(rewrite(FxMode::Reduced, hash), hash, "{name}");
             assert_eq!(rewrite(FxMode::Off, hash), NULL_EFFECT, "{name}");
-            let reduced = classify(FxMode::Reduced, true, hash, None);
+            let reduced = classify(
+                FxMode::Reduced,
+                true,
+                hash,
+                None,
+                &crate::moves::default_selection(),
+                false,
+            );
             assert_eq!(reduced, FxIntent::Passthrough, "{name}");
             assert_eq!(request_hash(reduced, hash), hash, "{name}");
             assert_ne!(

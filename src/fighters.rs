@@ -37,9 +37,10 @@ pub enum Fighter {
     Byleth,
     Inkling,
     Ganondorf,
+    Kirby,
 }
 
-pub const COUNT: usize = 14;
+pub const COUNT: usize = 15;
 
 pub const ALL: [Fighter; COUNT] = [
     Fighter::Kazuya,
@@ -56,6 +57,7 @@ pub const ALL: [Fighter; COUNT] = [
     Fighter::Byleth,
     Fighter::Inkling,
     Fighter::Ganondorf,
+    Fighter::Kirby,
 ];
 
 impl Fighter {
@@ -80,6 +82,7 @@ impl Fighter {
             Fighter::Byleth => "byleth",
             Fighter::Inkling => "inkling",
             Fighter::Ganondorf => "ganondorf",
+            Fighter::Kirby => "kirby",
         }
     }
 
@@ -100,32 +103,30 @@ impl Fighter {
             Fighter::Byleth => "Byleth",
             Fighter::Inkling => "Inkling",
             Fighter::Ganondorf => "Ganondorf",
+            Fighter::Kirby => "Kirby",
         }
     }
 
-    /// True when the fighter has at least one Reduced keep/cull table entry or
-    /// an EFF sibling. A fighter without one is offered On / Off only, and
-    /// "All = Reduced" leaves it On: Reduced never silently performs Off.
-    /// `tests::reduced_support_matches_the_tables` derives this from the tables.
+    /// True when the fighter has a move with at least one Reduced variant
+    /// (`moves`) or an EFF sibling (`eff_variant`). A fighter without one is
+    /// offered On / Off only, and "All = Reduced" leaves it On: Reduced never
+    /// silently performs Off. `tests::reduced_support_matches_the_tables`
+    /// derives this from the tables.
     pub const fn has_reduced(self) -> bool {
         match self {
-            // Pyra, Mythra and Byleth have character-wide tables only (partial:
-            // a few sword/axe layers). Every other row has move tables or a
-            // sibling.
-            Fighter::Kazuya
-            | Fighter::CaptainFalcon
+            Fighter::CaptainFalcon
             | Fighter::Ness
             | Fighter::Lucas
-            | Fighter::Ike
-            | Fighter::Chrom
-            | Fighter::Roy
             | Fighter::Palutena
             | Fighter::Sephiroth
             | Fighter::Pyra
             | Fighter::Mythra
             | Fighter::Byleth
-            | Fighter::Inkling
-            | Fighter::Ganondorf => true,
+            | Fighter::Kirby => true,
+            // Siblings only: Chrom's first side-B trail, the roller splash.
+            Fighter::Chrom | Fighter::Inkling => true,
+            // No ledger move and no sibling: Off tables only.
+            Fighter::Kazuya | Fighter::Ike | Fighter::Roy | Fighter::Ganondorf => false,
         }
     }
 
@@ -174,6 +175,7 @@ pub const fn of_fighter_kind(kind: i32) -> Option<Fighter> {
         0x1a => Some(Fighter::Roy),
         0x36 => Some(Fighter::Palutena),
         0x59 => Some(Fighter::Sephiroth),
+        0x6 => Some(Fighter::Kirby),
         _ => None,
     }
 }
@@ -203,6 +205,7 @@ const PREFIXES: &[(&str, Fighter)] = &[
     ("master_", Fighter::Byleth),
     ("inkling_", Fighter::Inkling),
     ("ganon_", Fighter::Ganondorf),
+    ("kirby_", Fighter::Kirby),
 ];
 
 /// Names the policy acts on without a move context that are in neither Off
@@ -266,7 +269,7 @@ const fn total(groups: &[&[&str]], more: &[&[&str]]) -> usize {
     count
 }
 
-const MAP_LEN: usize = total(SOURCES, crate::effects_reduced::GLOBAL_NAME_TABLES);
+const MAP_LEN: usize = total(SOURCES, crate::moves::NAME_TABLES);
 
 const fn insert(map: &mut [(u64, u8)], filled: usize, name: &str) {
     let fighter = match name_fighter(name) {
@@ -285,7 +288,7 @@ const fn insert(map: &mut [(u64, u8)], filled: usize, name: &str) {
 const fn build() -> [(u64, u8); MAP_LEN] {
     let mut map = [(0u64, 0u8); MAP_LEN];
     let mut filled = 0;
-    let levels: [&[&[&str]]; 2] = [SOURCES, crate::effects_reduced::GLOBAL_NAME_TABLES];
+    let levels: [&[&[&str]]; 2] = [SOURCES, crate::moves::NAME_TABLES];
     let mut level = 0;
     while level < levels.len() {
         let groups = levels[level];
@@ -333,7 +336,7 @@ pub fn fighter_for(hash: u64, context: Option<Context>) -> Option<Fighter> {
 mod tests {
     use super::*;
     use crate::effect_context::Profile;
-    use crate::{effects, effects_catalog, effects_reduced};
+    use crate::{effects, effects_catalog, moves};
     use std::collections::BTreeSet;
 
     const PROFILES: [Profile; 20] = [
@@ -454,34 +457,32 @@ mod tests {
     }
 
     #[test]
-    fn character_wide_reduced_names_and_extras_map() {
-        for names in effects_reduced::GLOBAL_NAME_TABLES
-            .iter()
-            .chain([EXTRA_NAMES].iter())
-        {
+    fn move_layer_names_and_extras_map() {
+        for names in moves::NAME_TABLES.iter().chain([EXTRA_NAMES].iter()) {
             for name in names.iter() {
                 assert_eq!(prefix_matches(name).len(), 1, "{name}");
                 assert!(unscoped_fighter(hash40(name)).is_some(), "{name}");
             }
         }
+        for mv in moves::MOVES {
+            for name in mv.layers {
+                assert_eq!(unscoped_fighter(hash40(name)), Some(mv.fighter), "{name}");
+                assert_eq!(fighter_for(hash40(name), None), Some(mv.fighter), "{name}");
+            }
+        }
         for (name, fighter) in [
-            ("eflame_sword_firetrail", Fighter::Pyra),
-            ("P_EflameSwordAura", Fighter::Pyra),
+            ("eflame_blazeend_trail", Fighter::Pyra),
             ("elight_sword_light", Fighter::Mythra),
-            ("P_ElightBusterHold", Fighter::Mythra),
             ("master_axeflare3", Fighter::Byleth),
-            ("inkling_slosher_trace", Fighter::Inkling),
             ("inkling_roller_splash_run", Fighter::Inkling),
-            ("ganon_majinken_flash", Fighter::Ganondorf),
-            ("ganon_sword_trace", Fighter::Ganondorf),
+            ("kirby_onigoroshi_light", Fighter::Kirby),
+            ("ness_pkfi_bomb", Fighter::Ness),
             ("chrom_mc_1", Fighter::Chrom),
             ("palutena_backlight2", Fighter::Palutena),
             ("edge_fire3_screen2", Fighter::Sephiroth),
             ("edge_shadowflare_bullet", Fighter::Sephiroth),
             ("captain_fp_flash", Fighter::CaptainFalcon),
-            ("roy_erupution_hold", Fighter::Roy),
             ("P_IkeVolcanoMax", Fighter::Ike),
-            ("ike_firepiller02", Fighter::Ike),
         ] {
             assert_eq!(unscoped_fighter(hash40(name)), Some(fighter), "{name}");
         }
@@ -508,9 +509,9 @@ mod tests {
             let owner = of_profile(profile);
             let context = sample(profile);
             let mut names: Vec<&str> = effects_catalog::profile_names(profile).to_vec();
-            for (p, keep, cull) in effects_reduced::PROFILE_NAME_TABLES {
-                if *p == profile {
-                    names.extend(keep.iter().chain(cull.iter()));
+            for mv in moves::MOVES {
+                if mv.profile == Some(profile) {
+                    names.extend(mv.layers.iter());
                 }
             }
             for name in names {
@@ -606,14 +607,9 @@ mod tests {
     #[test]
     fn reduced_support_matches_the_tables() {
         let mut derived = [false; COUNT];
-        for (profile, keep, cull) in effects_reduced::PROFILE_NAME_TABLES {
-            if !keep.is_empty() || !cull.is_empty() {
-                derived[of_profile(*profile).index()] = true;
-            }
-        }
-        for names in effects_reduced::GLOBAL_NAME_TABLES {
-            for name in names.iter() {
-                derived[name_fighter(name).unwrap().index()] = true;
+        for fighter in ALL {
+            if moves::fighter_has_variant(fighter) {
+                derived[fighter.index()] = true;
             }
         }
         // EFF siblings: Palutena up air, Shadow Flare, roller splash, Chrom side B.

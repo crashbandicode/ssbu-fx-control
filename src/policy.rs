@@ -1,13 +1,15 @@
 //! Per-fighter mode table and the per-request decision.
 //!
-//! The request pipeline is the Deluxe one, unchanged: `effects_reduced::classify`
-//! then `request_hash` then `eff_variant::forward`. The only difference is the
-//! mode it is given: the mode of the fighter that owns the request
-//! ([`crate::fighters::fighter_for`]), or On for a request no row owns.
-use crate::config::{self, FxMode, FxScope, Settings};
+//! The request pipeline is the Deluxe one: `effects_reduced::classify` then
+//! `request_hash` then `eff_variant::forward`. What this plugin adds is the
+//! mode it is given (the mode of the fighter that owns the request,
+//! [`crate::fighters::fighter_for`], or On for a request no row owns), the
+//! per-move variant selection and the harness cull list.
+use crate::config::{self, CullList, FxMode, FxScope, Settings, CULL_MAX};
 use crate::effect_context::Context;
 use crate::effects_reduced::{self, FxIntent};
 use crate::fighters::{self, Fighter, COUNT};
+use crate::moves::{self, Selection};
 use crate::{eff_variant, effects};
 use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 
@@ -18,6 +20,10 @@ const ANY_REDUCED: u8 = 2;
 pub struct ModeTable {
     modes: [AtomicU8; COUNT],
     scope: AtomicU8,
+    variants: [AtomicU8; moves::COUNT],
+    cull_hashes: [AtomicU64; CULL_MAX],
+    cull_fighters: [AtomicU8; CULL_MAX],
+    cull_len: AtomicU8,
     /// `ANY_ACTIVE` when a row is not On, `ANY_REDUCED` when a row is Reduced.
     summary: AtomicU8,
     generation: AtomicU64,
@@ -34,6 +40,10 @@ impl ModeTable {
         Self {
             modes: [const { AtomicU8::new(FxMode::On as u8) }; COUNT],
             scope: AtomicU8::new(FxScope::Online as u8),
+            variants: [const { AtomicU8::new(1) }; moves::COUNT],
+            cull_hashes: [const { AtomicU64::new(0) }; CULL_MAX],
+            cull_fighters: [const { AtomicU8::new(0) }; CULL_MAX],
+            cull_len: AtomicU8::new(0),
             summary: AtomicU8::new(0),
             generation: AtomicU64::new(0),
         }
@@ -106,10 +116,57 @@ impl ModeTable {
         self.summary.load(Ordering::Relaxed) & ANY_REDUCED != 0
     }
 
+    /// The Reduced variant selected for every move.
+    pub fn selection(&self) -> Selection {
+        let mut selection = [0u8; moves::COUNT];
+        for (slot, value) in selection.iter_mut().zip(&self.variants) {
+            *slot = value.load(Ordering::Relaxed);
+        }
+        selection
+    }
+
+    /// Selects variant `number` for move `index` (0 = original). Refuses a
+    /// number above the move's variant count.
+    pub fn select_variant(&self, index: usize, number: u8) -> bool {
+        let Some(mv) = moves::MOVES.get(index) else {
+            return false;
+        };
+        if usize::from(number) > mv.variants.len() {
+            return false;
+        }
+        self.variants[index].store(number, Ordering::Release);
+        self.generation.fetch_add(1, Ordering::AcqRel);
+        true
+    }
+
+    pub fn cull(&self) -> CullList {
+        let mut list = CullList {
+            len: self.cull_len.load(Ordering::Acquire),
+            ..CullList::default()
+        };
+        for slot in 0..usize::from(list.len) {
+            list.hashes[slot] = self.cull_hashes[slot].load(Ordering::Relaxed);
+            list.fighters[slot] = self.cull_fighters[slot].load(Ordering::Relaxed);
+        }
+        list
+    }
+
+    /// The fighter whose harness cull line names this request, if any.
+    pub fn cull_owner(&self, hash: u64) -> Option<Fighter> {
+        let len = usize::from(self.cull_len.load(Ordering::Acquire));
+        (0..len)
+            .find(|slot| self.cull_hashes[*slot].load(Ordering::Relaxed) == hash)
+            .map(|slot| {
+                fighters::ALL[usize::from(self.cull_fighters[slot].load(Ordering::Relaxed))]
+            })
+    }
+
     pub fn settings(&self) -> Settings {
         Settings {
             scope: self.scope(),
             modes: fighters::ALL.map(|fighter| self.mode(fighter)),
+            variants: self.selection(),
+            cull: self.cull(),
         }
     }
 
@@ -120,6 +177,16 @@ impl ModeTable {
                 .unwrap_or(FxMode::On);
             self.modes[fighter.index()].store(mode as u8, Ordering::Release);
         }
+        for (slot, value) in self.variants.iter().zip(settings.variants) {
+            slot.store(value, Ordering::Release);
+        }
+        // Length last, so a reader never sees a slot it was not meant to.
+        self.cull_len.store(0, Ordering::Release);
+        for (slot, (hash, fighter)) in settings.cull.entries().enumerate() {
+            self.cull_hashes[slot].store(hash, Ordering::Relaxed);
+            self.cull_fighters[slot].store(fighter as u8, Ordering::Relaxed);
+        }
+        self.cull_len.store(settings.cull.len, Ordering::Release);
         self.refresh();
     }
 
@@ -154,9 +221,18 @@ pub fn decide(
     hash: u64,
     context: Option<Context>,
 ) -> Decision {
-    let fighter = fighters::fighter_for(hash, context);
+    let listed = table.cull_owner(hash);
+    let fighter = fighters::fighter_for(hash, context).or(listed);
     let mode = fighter.map_or(FxMode::On, |fighter| table.mode(fighter));
-    let intent = effects_reduced::classify(mode, scope_allows, hash, context);
+    let selection = table.selection();
+    let intent = effects_reduced::classify(
+        mode,
+        scope_allows,
+        hash,
+        context,
+        &selection,
+        listed.is_some(),
+    );
     let requested = effects_reduced::request_hash(intent, hash);
     let forwarded = eff_variant::forward(mode, scope_allows, requested, context);
     Decision {
@@ -213,11 +289,13 @@ mod tests {
         assert_eq!(table.all(), None, "rows differ: All shows Unavailable");
         table.set_all(FxMode::Reduced);
         assert_eq!(table.all(), Some(FxMode::Reduced));
+        assert_eq!(table.mode(Fighter::Kazuya), FxMode::On, "no variant: On");
         assert!(table.any_reduced());
         assert!(!table.idle(false));
         table.set_all(FxMode::On);
         assert_eq!(table.all(), Some(FxMode::On));
         assert!(table.idle(false) && table.idle(true));
+        assert!(!table.set(Fighter::Kazuya, FxMode::Reduced));
     }
 
     #[test]
@@ -229,6 +307,8 @@ mod tests {
         let mut settings = Settings::default();
         settings.modes[Fighter::Pyra.index()] = FxMode::Reduced;
         settings.modes[Fighter::Roy.index()] = FxMode::Off;
+        settings.variants[moves::by_id("pyra_side_b").unwrap()] = 2;
+        settings.cull = CullList::parse("eflame_sword_open,kirby_onigoroshi_arc");
         table.load(&settings);
         assert_eq!(table.settings(), settings);
         assert!(!table.idle(true));
@@ -237,6 +317,11 @@ mod tests {
         only_off.set(Fighter::Roy, FxMode::Off);
         assert!(only_off.idle(false));
         assert!(!only_off.idle(true));
+        let before = table.generation();
+        assert!(table.select_variant(moves::by_id("kirby_hammer").unwrap(), 3));
+        assert!(!table.select_variant(moves::by_id("kirby_hammer").unwrap(), 4));
+        assert!(!table.select_variant(99, 1));
+        assert_eq!(table.generation(), before + 1);
     }
 
     #[test]
@@ -263,15 +348,19 @@ mod tests {
             hash40("ike_volcano")
         );
         // Another fighter's name is untouched by Ike's row.
-        let pyra = hash40("eflame_sword_firetrail");
-        assert_eq!(decide(&table, true, pyra, None).forwarded, pyra);
+        let trail = hash40("eflame_blazeend_trail");
+        assert_eq!(decide(&table, true, trail, None).forwarded, trail);
         table.set(Fighter::Pyra, FxMode::Reduced);
         assert_eq!(
-            decide(&table, true, pyra, None).intent,
+            decide(&table, true, trail, None).intent,
             FxIntent::ReducedCull
         );
-        assert_eq!(decide(&table, true, pyra, None).forwarded, NULL_EFFECT);
+        assert_eq!(decide(&table, true, trail, None).forwarded, NULL_EFFECT);
         let open = hash40("eflame_sword_open");
+        assert_eq!(
+            decide(&table, true, open, None).intent,
+            FxIntent::ReducedKeep
+        );
         assert_eq!(decide(&table, true, open, None).forwarded, open);
         // Unowned names pass through even with every row Off.
         table.set_all(FxMode::Off);
@@ -284,6 +373,46 @@ mod tests {
             let d = decide(&table, true, hash40(name), None);
             assert_eq!((d.fighter, d.forwarded), (None, hash40(name)), "{name}");
         }
+    }
+
+    #[test]
+    fn variant_selection_and_the_cull_list_drive_reduced() {
+        let table = ModeTable::new();
+        let mut settings = Settings::default();
+        settings.modes[Fighter::Kirby.index()] = FxMode::Reduced;
+        settings.modes[Fighter::Pyra.index()] = FxMode::Reduced;
+        settings.variants[moves::by_id("kirby_hammer").unwrap()] = 0;
+        settings.cull = CullList::parse("eflame_attack100,kirby_onigoroshi_arc");
+        table.load(&settings);
+        let light = hash40("kirby_onigoroshi_light");
+        // Variant 0: the move stays original.
+        assert_eq!(
+            decide(&table, true, light, None).intent,
+            FxIntent::ReducedKeep
+        );
+        assert_eq!(decide(&table, true, light, None).forwarded, light);
+        // The cull list nulls a kept layer and an unlisted name of a Reduced fighter.
+        let arc = hash40("kirby_onigoroshi_arc");
+        assert_eq!(decide(&table, true, arc, None).forwarded, NULL_EFFECT);
+        let swing = hash40("eflame_attack100");
+        let d = decide(&table, true, swing, None);
+        assert_eq!(
+            (d.fighter, d.intent),
+            (Some(Fighter::Pyra), FxIntent::ReducedCull)
+        );
+        assert_eq!(
+            decide(&table, false, swing, None).intent,
+            FxIntent::ReducedRestore
+        );
+        // A listed name of a fighter that is On is untouched.
+        table.set(Fighter::Pyra, FxMode::On);
+        assert_eq!(decide(&table, true, swing, None).forwarded, swing);
+        // Variant 3 culls the hammer body.
+        assert!(table.select_variant(moves::by_id("kirby_hammer").unwrap(), 3));
+        assert_eq!(
+            decide(&table, true, hash40("kirby_onigoroshi_body"), None).forwarded,
+            NULL_EFFECT
+        );
     }
 
     #[test]
@@ -311,7 +440,8 @@ mod tests {
 
     #[test]
     fn the_same_inputs_match_the_single_mode_pipeline() {
-        // With every row at one mode, the decision equals Deluxe's global mode.
+        // With every row at one mode, the decision equals the global-mode pipeline.
+        let selection = moves::default_selection();
         for mode in FxMode::ALL {
             let table = ModeTable::new();
             table.set_all(mode);
@@ -320,10 +450,13 @@ mod tests {
                 .chain(crate::effects_catalog::LEGACY_NAMES)
             {
                 let hash = hash40(name);
+                let row_mode =
+                    fighters::unscoped_fighter(hash).map_or(FxMode::On, |f| table.mode(f));
                 for scope in [true, false] {
-                    let intent = effects_reduced::classify(mode, scope, hash, None);
+                    let intent =
+                        effects_reduced::classify(row_mode, scope, hash, None, &selection, false);
                     let expected = eff_variant::forward(
-                        mode,
+                        row_mode,
                         scope,
                         effects_reduced::request_hash(intent, hash),
                         None,
@@ -370,8 +503,9 @@ mod tests {
         assert!(needs_context(eff_variant::SOURCE));
         assert!(needs_context(hash40("edge_shadowflare_start")));
         assert!(!needs_context(hash40("sys_hit_normal")));
-        // Character-wide Reduced names ask too (as Deluxe did in Reduced).
+        // Move layers ask too (shared names resolve by move context).
         assert!(needs_context(hash40("eflame_sword_open")));
+        assert!(needs_context(hash40("kirby_onigoroshi_light")));
         assert!(!needs_context(hash40("eflame_attack100")));
     }
 }

@@ -48,6 +48,7 @@ Each effect request is decided with the mode of the fighter that owns it
 | `master_` | Byleth |
 | `inkling_` | Inkling |
 | `ganon_` | Ganondorf |
+| `kirby_` | Kirby |
 
 A request no fighter owns passes through untouched, whatever the rows say.
 
@@ -144,11 +145,20 @@ the plugin's own online hooks and the Deluxe page are host-tested only.
 
 ## Reduced implementation
 
-The request policy keeps identified move bodies, projectiles and other cues
-while suppressing selected surrounding layers. Palutena's up-air resource has
-a separate lighter copy so its visible cue remains; the stock resource is kept
-for On. The Off policy deliberately protects that up-air parent, so Off is not
-a zero-cost reference for that parent.
+Since 0.2 the request policy is per move (`src/moves.rs`): each move under
+study lists its requested layers and numbered cull-set variants; the INI
+selects one variant per move (`variant.<move>=N`) and Reduced nulls exactly
+that set, keeping every other layer. A move with a context profile claims a
+request only from an actor in that move (a Gigaflare layer requested
+elsewhere is preserved); a move without one (Pyra's specials, Kirby's hammer,
+PK Fire) claims its layers by name. Variants are accepted only through the
+console protocol in [HARNESS](HARNESS.md). The character-wide and
+appearance-chosen tables of 0.1.x are on the archive branch.
+
+Palutena's up-air resource has a separate lighter copy so its visible cue
+remains; the stock resource is kept for On. The Off policy deliberately
+protects that up-air parent, so Off is not a zero-cost reference for that
+parent.
 
 EFF siblings exist for Palutena up air, Shadow Flare charge/projectile layers,
 the Inkling roller splashes and Chrom's first side-B trail. The plugin

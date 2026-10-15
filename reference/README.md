@@ -15,9 +15,13 @@ not port either.
 FX selection uses named effects and observations from the user-supplied
 2026-05-14 peer sources; the peer plugins and their compiled binaries are not
 bundled. C ABI declarations in `src/runtime/effects.rs` match skyline-smash
-bed642e `src/cpp.rs`. The Reduced keep/cull names are parent requests in
-WuBoytH/SSBU-Dumped-Scripts `59004685238a3f6f93bae905d3a4e079701c40b4`. No
-Nintendo game assets, decompiled game code or closed host NROs are included.
+bed642e `src/cpp.rs`. The move layers and variant cull names in
+`src/moves.rs` are parent requests in WuBoytH/SSBU-Dumped-Scripts
+`59004685238a3f6f93bae905d3a4e079701c40b4` (the 0.1.x keep/cull families and
+their generator are on branch `archive/0.1.x-appearance-variants`).
+`effect_names.txt` is the generated name list for `tools/resolve_trace.py`.
+No Nintendo game assets, decompiled game code or closed host NROs are
+included.
 
 Not ported from Deluxe: the scene tracker and its hooks, the input-buffer
 write in the online-latency hook, the render profiles, the overlay and the
