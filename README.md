@@ -86,7 +86,7 @@ sibling it requests instead. Exact names are in
 | Fighter | Move | Off removes | Reduced | Frame drops, 120 % CPU quota (On · Off · Reduced) | GIF |
 | --- | --- | --- | --- | --- | --- |
 | Kazuya | Forward smash | Devil-fist arc, line, aura, electric, sign-flash, wing and named hit layers (`demon_*`), forward smash only | Keeps `demon_smash_line`, `demon_devil_aura`, `demon_devil_start`; culls `demon_devil_start_elec`, `demon_devil_sign_flash` | On 66 (worst 30 ms) · Off 47 (worst 26 ms) · Reduced 50 (worst 27 ms) | Forward smash, Eden 2026-10-14: ![On](docs/media/kazuya-fsmash-on.gif) ![Off](docs/media/kazuya-fsmash-off.gif) ![Reduced](docs/media/kazuya-fsmash-reduced.gif) |
-| Captain Falcon | Falcon Punch | Punch body, wings, flash, hit, hold and thrust layers (`captain_fp_*`, `captain_at_*`) | Keeps `captain_fp_body_l/r`, `captain_fp_hold`; culls `captain_fp_wing_l/r` | _(not measured)_ | Falcon Punch, Eden 2026-10-14: ![On](docs/media/falcon-punch-on.gif) ![Off](docs/media/falcon-punch-off.gif) ![Reduced](docs/media/falcon-punch-reduced.gif) |
+| Captain Falcon | Falcon Punch | Punch body, wings, flash, hit, hold and thrust layers (`captain_fp_*`, `captain_at_*`) | Keeps `captain_fp_body_l/r`, `captain_fp_hold`; culls `captain_fp_wing_l/r` | On 78 (worst 176 ms) · Off 64 (worst 35 ms) · Reduced 87 (worst 33 ms) | Falcon Punch, Eden 2026-10-14: ![On](docs/media/falcon-punch-on.gif) ![Off](docs/media/falcon-punch-off.gif) ![Reduced](docs/media/falcon-punch-reduced.gif) |
 | Ness | PK Thunder (up special) | PK Thunder attack, bomb, hold, PSI and impact layers, `sys_flash` in that move | Keeps `ness_pkt_attack`; culls `ness_pkt_bomb` | On 53 (worst 65 ms) · Off 51 (worst 34 ms) · Reduced 63 (worst 32 ms) | PK Thunder, Eden 2026-10-14: ![On](docs/media/ness-pk-thunder-on.gif) ![Off](docs/media/ness-pk-thunder-off.gif) ![Reduced](docs/media/ness-pk-thunder-reduced.gif) |
 | Lucas | PK Thunder (up special) | PK Thunder attack, bomb, hold, PSI, flash and impact layers, `sys_flash` in that move | Keeps `lucas_pkt_attack`; culls `lucas_pkt_bomb` | On 44 (worst 28 ms) · Off 24 (worst 26 ms) · Reduced 43 (worst 26 ms) | PK Thunder, Eden 2026-10-14: ![On](docs/media/lucas-pk-thunder-on.gif) ![Off](docs/media/lucas-pk-thunder-off.gif) ![Reduced](docs/media/lucas-pk-thunder-reduced.gif) |
 | Ike | Eruption (neutral special) | Volcano, flash, ground, pillar and sword layers (`ike_volcano*`, `P_IkeVolcano*`); also the character-wide `ike_sword`, `ike_iaigiri_hold` | Keeps `ike_volcano`, `ike_volcano_middle`, `ike_volcano_hold`; culls `ike_volcano_add`, `_add2` to `_add4` | On 57 (worst 34 ms) · Off 49 (worst 29 ms) · Reduced 53 (worst 28 ms) | Eruption, Eden 2026-10-14: ![On](docs/media/ike-eruption-on.gif) ![Off](docs/media/ike-eruption-off.gif) ![Reduced](docs/media/ike-eruption-reduced.gif) |
@@ -131,8 +131,12 @@ render-callback intervals longer than 20 ms (out of about 1,800 in the
 window) and the longest interval, per mode. These are single 30 s runs of
 emulator CPU-side cadence under an artificial quota: differences of a few
 dozen intervals are within run-to-run noise, the figures are not Switch
-frame times, and no row claims a measured Switch gain. Raw captures, GIFs and
-notes are in the operator's evidence root (`fx-perf-1015/`).
+frame times, and no row claims a measured Switch gain. Rows through Kazuya
+were measured next to Online Deluxe 0.5.0 release `d9dd7df2…`; the remaining
+rows next to Deluxe's teardown-guard candidate build `6e744260…`, which only
+changes Deluxe's behaviour for three seconds after a scene transition and
+not inside any capture window. Raw captures, GIFs and notes are in the
+operator's evidence root (`fx-perf-1015/`).
 
 General hit, shield, damage and KO feedback (`sys_*`), projectiles, hitbox
 cues and 41 named reflector/counter/position cues are never filtered. Move-
