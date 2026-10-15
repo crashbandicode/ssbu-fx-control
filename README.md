@@ -24,9 +24,13 @@ finish normally; new requests follow the setting.
 
 **Status:** version 0.1.0. The policy and its tables are the ones Online
 Deluxe shipped and tested (see [FX runtime matrix](docs/FX_RUNTIME_MATRIX.md)).
-This plugin was tested in Eden on 2026-10-14 next to Deluxe 0.5.0: the FX
-Control page, the INI round trip and Sephiroth's Gigaflare under On, Off and
-Reduced (GIFs below). **Not yet verified on a console.**
+This plugin was tested in Eden on 2026-10-14/15 next to Deluxe 0.5.0: the FX
+Control page, the INI round trip, and every covered move recorded under On,
+Off and Reduced through the page (the GIF table below, 78 clips, Scope All,
+Training against a stopped CPU). Where a clip shows little visible
+difference the sampled observation in the evidence notes says so; the table
+describes the policy, not a measured frame-time gain. **Not yet verified on
+a console.**
 
 ## Install
 
@@ -109,9 +113,9 @@ sibling it requests instead. Exact names are in
 | Inkling | Forward and down smash, brush, arcs (character-wide) | `inkling_attack_arc`, `inkling_brush`, `inkling_splash` | Keeps `inkling_pablo_splash`, `inkling_slosher_splash(2)`; culls `inkling_pablo_trace2`, `inkling_slosher_trace` | Forward and down smash, Eden 2026-10-14: ![On](docs/media/inkling-smashes-on.gif) ![Off](docs/media/inkling-smashes-off.gif) ![Reduced](docs/media/inkling-smashes-reduced.gif) |
 | Ganondorf | Warlock Punch, sword (character-wide) | `ganon_majinken_flash`, `ganon_majinken_start`, `ganon_sword_flare` | Keeps `ganon_majinken`, `ganon_majinken_start`, `ganon_sword_flare`; culls `ganon_majinken_flash`, `ganon_sword_trace` | Warlock Punch and forward smash, Eden 2026-10-14: ![On](docs/media/ganondorf-moves-on.gif) ![Off](docs/media/ganondorf-moves-off.gif) ![Reduced](docs/media/ganondorf-moves-reduced.gif) |
 
-GIF cells marked _recording pending_ are filled in as each move is recorded
-in Eden under On, Off and Reduced; the policy for those rows is unchanged from
-Online Deluxe 0.4.x.
+Each GIF cell shows the move under On, Off and Reduced, recorded in Eden on
+2026-10-14/15 through the FX Control page (6 s at 12 fps, 640 px wide). The
+policy for every row is unchanged from Online Deluxe 0.4.x.
 
 General hit, shield, damage and KO feedback (`sys_*`), projectiles, hitbox
 cues and 41 named reflector/counter/position cues are never filtered. Move-
