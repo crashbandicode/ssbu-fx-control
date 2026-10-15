@@ -281,3 +281,73 @@ Further reproduction needs the peer's emulator/version, hardware, graphics
 settings and scene, or a trace from the affected setup. Repeating the same
 local fixture would not resolve those differences. Switch On/Off/Reduced
 measurements remain necessary before claiming Reduced avoids its lag spikes.
+
+<!-- quota-campaign-2026-10-15:begin -->
+## Per-move frame drops under a 120 % CPU quota — 2026-10-15
+
+Operator request: measure, under Switch-like constraints, whether Off or
+Reduced helps with frame drops, per covered move, and show it in the README
+table. Setup: Eden GIF build on the Yoga (Intel ANV, Vulkan, docked 1×, 100 %
+speed), isolated profile, Eden's systemd unit under `CPUQuota=120%` with
+`CPUQuotaPeriodSec=5ms` (the setting that reproduces the console's LessLag
+character-select dip in Online Deluxe's measurements; at 175 % nothing dips),
+Online Deluxe on its LessLag profile with the Performance view open, FX
+Control 0.1.0 (`505dfecd…`) with Scope All, Training against a stopped Kazuya.
+Per move and mode: one 30 s Deluxe `CAPTURE_TIMING` window (render-callback
+intervals, about 1,800 per window) while the move was cast three times, plus
+an 8 s GIF with the Performance view in frame. Metric: intervals longer than
+20 ms, and the longest interval (ms). Rows through Kazuya ran next to Deluxe
+0.5.0 release `d9dd7df2…`; the rest next to the teardown-guard candidate
+`cc7f07f6…`, whose only behaviour change is the first three seconds after a
+scene transition, outside every capture window. 27 of 27 rows complete.
+
+| Move | On (> 20 ms / worst) | Off | Reduced | Deluxe build |
+| --- | --- | --- | --- | --- |
+| `ness-pk-thunder` | 53 / 65 | 51 / 34 | 63 / 32 | release d9dd7df2 |
+| `lucas-pk-thunder` | 44 / 28 | 24 / 26 | 43 / 26 | release d9dd7df2 |
+| `sephiroth-gigaflare` | 149 / 97 | 74 / 29 | 90 / 35 | release d9dd7df2 |
+| `sephiroth-shadow-flare` | 117 / 36 | 67 / 28 | 82 / 31 | release d9dd7df2 |
+| `sephiroth-scintilla` | 66 / 33 | 50 / 30 | 55 / 30 | release d9dd7df2 |
+| `sephiroth-dash-attack` | 89 / 38 | 62 / 33 | 77 / 32 | release d9dd7df2 |
+| `sephiroth-smashes` | 88 / 32 | 146 / 35 | 95 / 32 | release d9dd7df2 |
+| `ike-eruption` | 57 / 34 | 49 / 29 | 53 / 28 | release d9dd7df2 |
+| `roy-flare-blade` | 62 / 30 | 46 / 35 | 145 / 35 | release d9dd7df2 |
+| `chrom-flare-blade` | 92 / 32 | 31 / 36 | 31 / 27 | release d9dd7df2 |
+| `chrom-side-b` | 40 / 26 | 26 / 30 | 54 / 28 | release d9dd7df2 |
+| `palutena-explosive-flame` | 79 / 82 | 55 / 31 | 90 / 31 | release d9dd7df2 |
+| `palutena-jab` | 113 / 32 | 62 / 30 | 58 / 30 | release d9dd7df2 |
+| `palutena-autoreticle` | 69 / 30 | 63 / 33 | 53 / 30 | release d9dd7df2 |
+| `palutena-warp` | 52 / 28 | 50 / 30 | 41 / 27 | release d9dd7df2 |
+| `palutena-tilts` | 65 / 32 | 46 / 25 | 49 / 29 | release d9dd7df2 |
+| `palutena-usmash` | 54 / 27 | 41 / 31 | 48 / 27 | release d9dd7df2 |
+| `palutena-fsmash` | 98 / 30 | 76 / 31 | 96 / 32 | release d9dd7df2 |
+| `palutena-uair` | 66 / 30 | 44 / 29 | 44 / 34 | release d9dd7df2 |
+| `kazuya-fsmash` | 66 / 30 | 47 / 26 | 50 / 27 | release d9dd7df2 |
+| `falcon-punch` | 78 / 176 | 64 / 35 | 87 / 33 | candidate cc7f07f6 |
+| `pyra-moves` | 245 / 118 | 208 / 30 | 245 / 35 | candidate cc7f07f6 |
+| `mythra-moves` | 240 / 54 | 159 / 32 | 229 / 33 | candidate cc7f07f6 |
+| `byleth-moves` | 133 / 46 | 151 / 35 | 131 / 36 | candidate cc7f07f6 |
+| `inkling-roller` | 149 / 45 | 136 / 32 | 102 / 30 | candidate cc7f07f6 |
+| `inkling-smashes` | 135 / 32 | 112 / 31 | 112 / 30 | candidate cc7f07f6 |
+| `ganondorf-moves` | 64 / 29 | 55 / 30 | 41 / 30 | candidate cc7f07f6 |
+
+† a mode needed one retry after a capture-gap warning; the retained capture is
+the clean one.
+
+**Reading.** Off had fewer slow intervals than On in 25 of 27 rows and
+more in 2; Reduced usually sits between the two but not always (Roy's and
+Mythra's Reduced windows were the slowest of their rows). The longest
+intervals separate more clearly: 5 On windows contain a spike of
+60 ms or more (Captain Falcon 176 ms, Pyra 118 ms, Gigaflare 97 ms, Explosive
+Flame 82 ms, Ness 65 ms) while no Off window exceeds 36 ms. These are single
+30 s runs: the baseline under the quota already has 1–3 % of intervals over
+20 ms with no move at all, cast timing and hit outcomes differed between
+modes, and differences of a few dozen intervals are within run-to-run noise.
+The direction is consistent with the effects costing CPU time under a tight
+budget; it is not a Switch measurement and does not establish a per-move
+gain. Switch On/Off/Reduced trials with `CAPTURE_TIMING` on the console
+remain the acceptance test (see the performance method).
+
+Evidence: `fx-perf-1015/` in the operator's evidence root (captures with
+timing/api CSVs, analysis.json, the -perf GIFs, driver notes).
+<!-- quota-campaign-2026-10-15:end -->
