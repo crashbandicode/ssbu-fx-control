@@ -114,8 +114,25 @@ sibling it requests instead. Exact names are in
 | Ganondorf | Warlock Punch, sword (character-wide) | `ganon_majinken_flash`, `ganon_majinken_start`, `ganon_sword_flare` | Keeps `ganon_majinken`, `ganon_majinken_start`, `ganon_sword_flare`; culls `ganon_majinken_flash`, `ganon_sword_trace` | _(not measured)_ | Warlock Punch and forward smash, Eden 2026-10-14: ![On](docs/media/ganondorf-moves-on.gif) ![Off](docs/media/ganondorf-moves-off.gif) ![Reduced](docs/media/ganondorf-moves-reduced.gif) |
 
 Each GIF cell shows the move under On, Off and Reduced, recorded in Eden on
-2026-10-14/15 through the FX Control page (6 s at 12 fps, 640 px wide). The
-policy for every row is unchanged from Online Deluxe 0.4.x.
+2026-10-14/15 through the FX Control page (12 fps, 640 px wide). Rows with a
+frame-drop figure were re-recorded with Online Deluxe's Performance view open
+in the top-right corner, so the FPS and frame-time rows are in the clip (small
+at this width; the frame-time bar is the readable part). The policy for every
+row is unchanged from Online Deluxe 0.4.x.
+
+**Frame drops, 120 % CPU quota.** Eden on this host holds 60 fps at 1× in
+every mode, so to approximate the Switch's CPU budget the Eden process ran
+under a systemd CPU quota of 120 % with a 5 ms period, the setting that
+reproduces the console's LessLag character-select dip in Online Deluxe's
+measurements. For each mode one 30 s Deluxe `CAPTURE_TIMING` window was
+recorded while the move was cast three times, with Deluxe on its LessLag
+profile and the Performance view open. The cell gives the number of
+render-callback intervals longer than 20 ms (out of about 1,800 in the
+window) and the longest interval, per mode. These are single 30 s runs of
+emulator CPU-side cadence under an artificial quota: differences of a few
+dozen intervals are within run-to-run noise, the figures are not Switch
+frame times, and no row claims a measured Switch gain. Raw captures, GIFs and
+notes are in the operator's evidence root (`fx-perf-1015/`).
 
 General hit, shield, damage and KO feedback (`sys_*`), projectiles, hitbox
 cues and 41 named reflector/counter/position cues are never filtered. Move-
