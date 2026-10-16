@@ -55,8 +55,9 @@ rule is about. Eden under a CPU quota ranks candidates cheaply (the 0.1.x
 3. **Console passes.** Set the fighter's row to Reduced and the move's
    variant row (Deluxe page, or `variant.<move>=n` in the INI), capture,
    analyse; repeat per variant without leaving Training: the row applies at
-   once. In Training Deluxe 0.5.3 needs **ZL held** with Left/Right for any
-   edit in its window (a plain press is ignored). Where a candidate is close, bisect with `cull=` (below) before
+   once. In Training Deluxe 0.5.3 needs **ZR held** with Left/Right for any
+   edit in its window (a plain press is ignored; ZL + D-pad swaps the
+   controlled fighter in Training). Where a candidate is close, bisect with `cull=` (below) before
    adding a new variant.
 4. **Record.** Ledger row per move and variant; `status` in `moves.rs`
    follows the ledger; a VALIDATION-style entry in both repositories.
