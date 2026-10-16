@@ -10,12 +10,14 @@
 //! * **Name.** Otherwise the effect name decides. The map below is built at
 //!   compile time from every name the policy can act on without a move
 //!   context: the Off tables (`effects::TARGET_NAMES`,
-//!   `effects_catalog::LEGACY_NAMES`), the character-wide Reduced tables, the
-//!   EFF-sibling parents that need no move and the Gigaflare screen overlay.
-//!   Each name is classified by its character prefix; a name that matches no
-//!   prefix, or more than one, fails the build.
+//!   `effects_catalog::LEGACY_NAMES`), the move layers and the Gigaflare
+//!   screen overlay. Each name is classified by its character prefix; a name
+//!   that matches no prefix, or more than one, fails the build.
 //!
-//! A request that maps to no fighter passes through untouched.
+//! A request that maps to no fighter passes through untouched. Since 0.2.0
+//! the covered fighters are exactly the ones a ledger move (`moves::MOVES`)
+//! belongs to; Kazuya, Ike, Chrom, Roy and Ganondorf (0.1.x Off tables and
+//! EFF siblings only) left with `archive/0.1.x-appearance-variants`.
 use crate::effect_context::{self, Context, Profile};
 use crate::effects::hash40;
 
@@ -23,40 +25,30 @@ use crate::effects::hash40;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(u8)]
 pub enum Fighter {
-    Kazuya,
     CaptainFalcon,
     Ness,
     Lucas,
-    Ike,
-    Chrom,
-    Roy,
     Palutena,
     Sephiroth,
     Pyra,
     Mythra,
     Byleth,
     Inkling,
-    Ganondorf,
     Kirby,
 }
 
-pub const COUNT: usize = 15;
+pub const COUNT: usize = 10;
 
 pub const ALL: [Fighter; COUNT] = [
-    Fighter::Kazuya,
     Fighter::CaptainFalcon,
     Fighter::Ness,
     Fighter::Lucas,
-    Fighter::Ike,
-    Fighter::Chrom,
-    Fighter::Roy,
     Fighter::Palutena,
     Fighter::Sephiroth,
     Fighter::Pyra,
     Fighter::Mythra,
     Fighter::Byleth,
     Fighter::Inkling,
-    Fighter::Ganondorf,
     Fighter::Kirby,
 ];
 
@@ -68,20 +60,15 @@ impl Fighter {
     /// Stable INI key and menu option id.
     pub const fn id(self) -> &'static str {
         match self {
-            Fighter::Kazuya => "kazuya",
             Fighter::CaptainFalcon => "captain_falcon",
             Fighter::Ness => "ness",
             Fighter::Lucas => "lucas",
-            Fighter::Ike => "ike",
-            Fighter::Chrom => "chrom",
-            Fighter::Roy => "roy",
             Fighter::Palutena => "palutena",
             Fighter::Sephiroth => "sephiroth",
             Fighter::Pyra => "pyra",
             Fighter::Mythra => "mythra",
             Fighter::Byleth => "byleth",
             Fighter::Inkling => "inkling",
-            Fighter::Ganondorf => "ganondorf",
             Fighter::Kirby => "kirby",
         }
     }
@@ -89,29 +76,23 @@ impl Fighter {
     /// Display label (at most 24 bytes).
     pub const fn label(self) -> &'static str {
         match self {
-            Fighter::Kazuya => "Kazuya",
             Fighter::CaptainFalcon => "Captain Falcon",
             Fighter::Ness => "Ness",
             Fighter::Lucas => "Lucas",
-            Fighter::Ike => "Ike",
-            Fighter::Chrom => "Chrom",
-            Fighter::Roy => "Roy",
             Fighter::Palutena => "Palutena",
             Fighter::Sephiroth => "Sephiroth",
             Fighter::Pyra => "Pyra",
             Fighter::Mythra => "Mythra",
             Fighter::Byleth => "Byleth",
             Fighter::Inkling => "Inkling",
-            Fighter::Ganondorf => "Ganondorf",
             Fighter::Kirby => "Kirby",
         }
     }
 
     /// True when the fighter has a ledger move (`moves::MOVES`) with at least
-    /// one Reduced variant. A fighter without one is offered On / Off only,
-    /// and "All = Reduced" leaves it On: Reduced never silently performs Off.
-    /// The 0.1.x EFF siblings (Chrom side B, the roller splash) no longer
-    /// count: that feature is off since 0.2.0 (`archive/0.1.x-appearance-variants`).
+    /// one Reduced variant. A fighter without one (Inkling) is offered On /
+    /// Off only, and "All = Reduced" leaves it On: Reduced never silently
+    /// performs Off.
     pub const fn has_reduced(self) -> bool {
         let mut index = 0;
         while index < crate::moves::MOVES.len() {
@@ -124,64 +105,17 @@ impl Fighter {
         false
     }
 
-    /// True when a ledger move belongs to the fighter: the fighter has a row
-    /// on the Deluxe page and a line in the INI. The others (Kazuya, Ike,
-    /// Chrom, Roy, Ganondorf) keep their 0.1.x Off tables compiled but have
-    /// no row and stay On; they are not in `PAGE`.
-    pub const fn on_page(self) -> bool {
-        let mut index = 0;
-        while index < crate::moves::MOVES.len() {
-            if crate::moves::MOVES[index].fighter as usize == self as usize {
-                return true;
-            }
-            index += 1;
-        }
-        false
-    }
-
     pub fn from_id(id: &str) -> Option<Fighter> {
         ALL.iter().copied().find(|fighter| fighter.id() == id)
     }
 }
 
-const fn page_list() -> (usize, [Fighter; COUNT]) {
-    let mut out = ALL;
-    let mut count = 0;
-    let mut index = 0;
-    while index < COUNT {
-        if ALL[index].on_page() {
-            out[count] = ALL[index];
-            count += 1;
-        }
-        index += 1;
-    }
-    (count, out)
-}
-
-/// Fighters with a page row and an INI line, in menu order: the ones a
-/// ledger move belongs to.
-pub const PAGE_COUNT: usize = page_list().0;
-pub const PAGE: [Fighter; PAGE_COUNT] = {
-    let list = page_list().1;
-    let mut out = [Fighter::Kazuya; PAGE_COUNT];
-    let mut index = 0;
-    while index < PAGE_COUNT {
-        out[index] = list[index];
-        index += 1;
-    }
-    out
-};
-
 /// Fighter of a move profile. `Edge*` is Sephiroth.
 pub const fn of_profile(profile: Profile) -> Fighter {
     match profile {
-        Profile::KazuyaFSmash => Fighter::Kazuya,
         Profile::FalconPunch => Fighter::CaptainFalcon,
         Profile::NessUpB => Fighter::Ness,
         Profile::LucasUpB => Fighter::Lucas,
-        Profile::IkeNeutralB => Fighter::Ike,
-        Profile::ChromNeutralB => Fighter::Chrom,
-        Profile::RoyNeutralB => Fighter::Roy,
         Profile::PalutenaRapidJab
         | Profile::PalutenaNeutralB
         | Profile::PalutenaUpB
@@ -203,13 +137,9 @@ pub const fn of_profile(profile: Profile) -> Fighter {
 /// `effect_context` already tracks (skyline-smash bed642e).
 pub const fn of_fighter_kind(kind: i32) -> Option<Fighter> {
     match kind {
-        0x5c => Some(Fighter::Kazuya),
         0xb => Some(Fighter::CaptainFalcon),
         0xa => Some(Fighter::Ness),
         0x28 => Some(Fighter::Lucas),
-        0x23 => Some(Fighter::Ike),
-        0x1b => Some(Fighter::Chrom),
-        0x1a => Some(Fighter::Roy),
         0x36 => Some(Fighter::Palutena),
         0x59 => Some(Fighter::Sephiroth),
         0x6 => Some(Fighter::Kirby),
@@ -219,18 +149,11 @@ pub const fn of_fighter_kind(kind: i32) -> Option<Fighter> {
 
 /// Character prefixes of effect names. Exactly one must match each mapped name.
 const PREFIXES: &[(&str, Fighter)] = &[
-    ("demon_", Fighter::Kazuya),
     ("captain_", Fighter::CaptainFalcon),
     ("ness_", Fighter::Ness),
     ("P_Ness", Fighter::Ness),
     ("lucas_", Fighter::Lucas),
     ("P_Lucas", Fighter::Lucas),
-    ("ike_", Fighter::Ike),
-    ("P_Ike", Fighter::Ike),
-    ("chrom_", Fighter::Chrom),
-    ("P_Chrom", Fighter::Chrom),
-    ("roy_", Fighter::Roy),
-    ("P_Roy", Fighter::Roy),
     ("palutena_", Fighter::Palutena),
     ("P_Palutena", Fighter::Palutena),
     ("edge_", Fighter::Sephiroth),
@@ -241,16 +164,13 @@ const PREFIXES: &[(&str, Fighter)] = &[
     ("P_Elight", Fighter::Mythra),
     ("master_", Fighter::Byleth),
     ("inkling_", Fighter::Inkling),
-    ("ganon_", Fighter::Ganondorf),
     ("kirby_", Fighter::Kirby),
 ];
 
 /// Names the policy acts on without a move context that are in neither Off
-/// table nor a character-wide Reduced table: EFF-sibling parents resolved
-/// without a move (`chrom_mc_1`), the up-air sibling parent (needs a move,
-/// listed so a context-less request still names Palutena) and the Gigaflare
-/// screen overlay skipped by `req_screen`.
-const EXTRA_NAMES: &[&str] = &["chrom_mc_1", "palutena_backlight2", "edge_fire3_screen2"];
+/// table nor a move table: the Gigaflare screen overlay skipped by
+/// `req_screen`.
+const EXTRA_NAMES: &[&str] = &["edge_fire3_screen2"];
 
 const fn starts_with(name: &str, prefix: &str) -> bool {
     let name = name.as_bytes();
@@ -376,14 +296,10 @@ mod tests {
     use crate::{effects, effects_catalog, moves};
     use std::collections::BTreeSet;
 
-    const PROFILES: [Profile; 20] = [
-        Profile::KazuyaFSmash,
+    const PROFILES: [Profile; 16] = [
         Profile::FalconPunch,
         Profile::NessUpB,
         Profile::LucasUpB,
-        Profile::IkeNeutralB,
-        Profile::ChromNeutralB,
-        Profile::RoyNeutralB,
         Profile::PalutenaRapidJab,
         Profile::PalutenaNeutralB,
         Profile::PalutenaUpB,
@@ -407,10 +323,6 @@ mod tests {
         "sys_flash",
         "sys_smash_flash",
         "sys_smash_flash_s",
-        // Ike's pillar layers reused by Chrom and Roy neutral-B.
-        "ike_firepiller02",
-        "ike_fireground00",
-        "ike_firepiller00",
         // Sephiroth emitter-style parents without a character prefix.
         "aura1",
         "aura2",
@@ -514,16 +426,14 @@ mod tests {
             ("inkling_roller_splash_run", Fighter::Inkling),
             ("kirby_onigoroshi_light", Fighter::Kirby),
             ("ness_pkfi_bomb", Fighter::Ness),
-            ("chrom_mc_1", Fighter::Chrom),
-            ("palutena_backlight2", Fighter::Palutena),
             ("edge_fire3_screen2", Fighter::Sephiroth),
             ("edge_shadowflare_bullet", Fighter::Sephiroth),
             ("captain_fp_flash", Fighter::CaptainFalcon),
-            ("P_IkeVolcanoMax", Fighter::Ike),
         ] {
             assert_eq!(unscoped_fighter(hash40(name)), Some(fighter), "{name}");
         }
-        // General feedback and other fighters' names pass through.
+        // General feedback, other fighters' names and the retired 0.1.x
+        // fighters' names pass through.
         for name in [
             "sys_hit_normal",
             "sys_flash",
@@ -532,6 +442,13 @@ mod tests {
             "inkling_blaster_typo_unlisted",
             "mario_fireball",
             "null",
+            "demon_smash_arc",
+            "ike_volcano",
+            "P_IkeVolcanoMax",
+            "chrom_mc_1",
+            "roy_eruption",
+            "ganon_sword_flare",
+            "palutena_backlight2",
         ] {
             assert_eq!(unscoped_fighter(hash40(name)), None, "{name}");
             assert_eq!(fighter_for(hash40(name), None), None, "{name}");
@@ -610,8 +527,8 @@ mod tests {
                 "{kind:#x}"
             );
         }
-        // A weapon kind is never read as a fighter kind (0x5c is Kazuya only as
-        // a fighter); a Gigaflare fly status has no profile and falls back to
+        // A weapon kind is never read as a fighter kind (0x5c was Kazuya as a
+        // fighter); a Gigaflare fly status has no profile and falls back to
         // the name.
         assert_eq!(fighter_for(hash40("flare1"), Some(weapon(0x5c, 0))), None);
         assert_eq!(
@@ -621,7 +538,7 @@ mod tests {
         // An untracked object category is ignored; the name decides.
         assert_eq!(
             fighter_for(
-                hash40("ganon_sword_flare"),
+                hash40("eflame_blazeend_trail"),
                 Some(Context {
                     category: 2,
                     kind: 0x36,
@@ -629,57 +546,42 @@ mod tests {
                     status: 0
                 })
             ),
-            Some(Fighter::Ganondorf)
+            Some(Fighter::Pyra)
         );
-        // Chrom's neutral-B uses Ike's pillar: Chrom's row decides it.
+        // A retired fighter's kind is not tracked and its names belong to nobody.
         assert_eq!(
             fighter_for(
                 hash40("ike_firepiller02"),
-                Some(sample(Profile::ChromNeutralB))
+                Some(Context {
+                    category: 0,
+                    kind: 0x1b,
+                    motion: hash40("special_n"),
+                    status: 0x1dc
+                })
             ),
-            Some(Fighter::Chrom)
+            None
         );
+        assert!(!effect_context::tracked(0, 0x5c));
+        assert!(!effect_context::tracked(0, 0x23));
     }
 
     #[test]
-    fn reduced_support_and_page_rows_follow_the_ledger() {
+    fn every_fighter_has_a_ledger_move_and_reduced_follows_its_variants() {
         for fighter in ALL {
+            assert!(
+                moves::MOVES.iter().any(|mv| mv.fighter == fighter),
+                "{fighter:?} has no ledger move"
+            );
             assert_eq!(
                 fighter.has_reduced(),
                 moves::fighter_has_variant(fighter),
                 "{fighter:?}"
             );
-            assert_eq!(
-                fighter.on_page(),
-                moves::MOVES.iter().any(|mv| mv.fighter == fighter),
-                "{fighter:?}"
-            );
-            assert_eq!(PAGE.contains(&fighter), fighter.on_page(), "{fighter:?}");
         }
-        // Siblings no longer make a fighter Reduced-capable.
-        assert!(!Fighter::Chrom.has_reduced());
-        assert!(!Fighter::Inkling.has_reduced());
-        assert!(Fighter::Inkling.on_page(), "roller is a ledger move");
-        assert!(!Fighter::Chrom.on_page());
-        assert_eq!(
-            PAGE,
-            [
-                Fighter::CaptainFalcon,
-                Fighter::Ness,
-                Fighter::Lucas,
-                Fighter::Palutena,
-                Fighter::Sephiroth,
-                Fighter::Pyra,
-                Fighter::Mythra,
-                Fighter::Byleth,
-                Fighter::Inkling,
-                Fighter::Kirby,
-            ]
-        );
-        assert_eq!(PAGE_COUNT, 10);
-        // Menu order is `ALL` order.
-        let positions: Vec<usize> = PAGE.iter().map(|fighter| fighter.index()).collect();
-        assert!(positions.windows(2).all(|pair| pair[0] < pair[1]));
+        assert!(!Fighter::Inkling.has_reduced(), "roller has no variant");
+        assert!(Fighter::Kirby.has_reduced());
+        assert_eq!(Fighter::from_id("kazuya"), None);
+        assert_eq!(Fighter::from_id("chrom"), None);
     }
 
     #[test]

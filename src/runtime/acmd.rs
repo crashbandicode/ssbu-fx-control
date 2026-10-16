@@ -1,10 +1,8 @@
 //! ACMD has its own request path; lua_bind::EffectModule hooks do not cover it.
-//! `EFFECT_OFF_KIND` and `EFFECT_DETACH_KIND` are void in skyline-smash
-//! bed642e. Their hooks read the hash and flags, call the lua_bind cleanup for
-//! the clone, then call the original command. They do not rewrite the Lua
-//! stack and do not invent a return value.
 //! Mirrors the supplied FX mod's stack bridge, with bounded primitive storage,
 //! no per-frame allocation and an unchanged original call after substitution.
+//! The 0.1.x `EFFECT_OFF_KIND` / `EFFECT_DETACH_KIND` cleanup hooks (ids
+//! 0x11a / 0x11b) left with the EFF siblings in 0.2.0.
 //!
 //! Ported from Online Deluxe `src/runtime/acmd.rs`: each effect name takes the
 //! mode of the fighter that owns it (`crate::policy`).
@@ -70,13 +68,11 @@ unsafe fn filter(lua_state: u64, path: u64, calls: &AtomicU64, hash_count: usize
     };
     let mut intents = [FxIntent::Passthrough; 2];
     let mut forwarded = [0u64; 2];
-    let mut variant = [false; 2];
     let mut changed = false;
     for index in 0..hash_count {
         let decision = policy::decide(&TABLE, scope, args[index].raw, context);
         intents[index] = decision.intent;
         forwarded[index] = decision.forwarded;
-        variant[index] = decision.forwarded != decision.requested;
         if decision.forwarded != args[index].raw {
             changed = true;
         }
@@ -95,18 +91,6 @@ unsafe fn filter(lua_state: u64, path: u64, calls: &AtomicU64, hash_count: usize
             }
             args[len] = value;
             len += 1;
-        }
-    }
-    for index in 0..hash_count {
-        if variant[index] {
-            let swaps = crate::eff_variant::observe_swap(args[index].raw);
-            if swaps == 1 || swaps.is_multiple_of(128) {
-                record(
-                    Code::FxVariantUse,
-                    crate::eff_variant::source_file(args[index].raw),
-                    args[index].raw,
-                );
-            }
         }
     }
     let originals = [args[0].raw, args[1].raw];
@@ -231,105 +215,6 @@ effect_hook!(
     2
 );
 
-extern "C" {
-    #[link_name = "\u{1}_ZN3app10sv_animcmd15EFFECT_OFF_KINDEP9lua_State"]
-    fn effect_off_kind(lua_state: u64);
-    #[link_name = "\u{1}_ZN3app10sv_animcmd18EFFECT_DETACH_KINDEP9lua_State"]
-    fn effect_detach_kind(lua_state: u64);
-}
-
-struct OffFlags {
-    hash: u64,
-    second: bool,
-    third: bool,
-}
-
-struct DetachFlags {
-    hash: u64,
-    arg: i32,
-}
-
-unsafe fn read_off_flags(lua_state: u64) -> Option<OffFlags> {
-    if lua_state == 0 {
-        return None;
-    }
-    let mut agent = Agent { storage: [0; 9] };
-    agent_construct(&mut agent, lua_state);
-    let hash = stack_value(&mut agent, 1);
-    let second = stack_value(&mut agent, 2);
-    let third = stack_value(&mut agent, 3);
-    if !matches!(hash.kind, 2 | 7) || second.kind != 1 || third.kind != 1 {
-        return None;
-    }
-    Some(OffFlags {
-        hash: hash.raw,
-        second: second.raw != 0,
-        third: third.raw != 0,
-    })
-}
-
-unsafe fn read_detach_flags(lua_state: u64) -> Option<DetachFlags> {
-    if lua_state == 0 {
-        return None;
-    }
-    let mut agent = Agent { storage: [0; 9] };
-    agent_construct(&mut agent, lua_state);
-    let hash = stack_value(&mut agent, 1);
-    let arg = stack_value(&mut agent, 2);
-    if !matches!(hash.kind, 2 | 7) || arg.kind != 2 {
-        return None;
-    }
-    Some(DetachFlags {
-        hash: hash.raw,
-        arg: arg.raw as i32,
-    })
-}
-
-#[skyline::hook(replace = effect_off_kind)]
-unsafe fn ssbu_fx_control_acmd_cleanup_off_kind(lua_state: u64) {
-    if let Some(saved) = read_off_flags(lua_state) {
-        if let Some(alias) = crate::eff_variant::cleanup_alias(saved.hash) {
-            let accessor = super::effect_context::module_accessor(lua_state);
-            if let Some(_guard) = crate::eff_cleanup::begin_alias(
-                accessor as usize,
-                saved.hash,
-                crate::eff_cleanup::CLEANUP_KILL,
-                Some(alias),
-            ) {
-                let _ignored =
-                    super::effects::invoke_kill_kind(accessor, alias, saved.second, saved.third);
-                super::effects::log_variant_cleanup(saved.hash, alias);
-                super::effects::log_cleanup_route(3, false);
-                call_original!(lua_state);
-                return;
-            }
-        }
-    }
-    call_original!(lua_state);
-}
-
-#[skyline::hook(replace = effect_detach_kind)]
-unsafe fn ssbu_fx_control_acmd_cleanup_detach_kind(lua_state: u64) {
-    if let Some(saved) = read_detach_flags(lua_state) {
-        if let Some(alias) = crate::eff_variant::cleanup_alias(saved.hash) {
-            let accessor = super::effect_context::module_accessor(lua_state);
-            if let Some(_guard) = crate::eff_cleanup::begin_alias(
-                accessor as usize,
-                saved.hash,
-                crate::eff_cleanup::CLEANUP_DETACH,
-                Some(alias),
-            ) {
-                let _ignored = super::effects::invoke_detach_kind(accessor, alias, saved.arg);
-                super::effects::log_variant_cleanup(saved.hash, alias);
-                super::effects::log_cleanup_route(4, false);
-                call_original!(lua_state);
-                return;
-            }
-        }
-    }
-    call_original!(lua_state);
-}
-
 pub(super) fn install() {
     macro_rules! install {
         ($target:ident, $hook:ident, $id:expr) => {
@@ -356,14 +241,4 @@ pub(super) fn install() {
     install!(flip, ssbu_fx_control_filter_flip, 0x117);
     install!(flip_alpha, ssbu_fx_control_filter_flip_alpha, 0x118);
     install!(flip_no_stop, ssbu_fx_control_filter_flip_no_stop, 0x119);
-    install!(
-        effect_off_kind,
-        ssbu_fx_control_acmd_cleanup_off_kind,
-        0x11a
-    );
-    install!(
-        effect_detach_kind,
-        ssbu_fx_control_acmd_cleanup_detach_kind,
-        0x11b
-    );
 }

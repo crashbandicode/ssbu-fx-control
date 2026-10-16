@@ -12,9 +12,9 @@
 //! The 0.1.x cull sets were chosen by appearance; where one existed for a
 //! move below it is kept as a candidate so the console can rank it against
 //! the new ones. Moves that no console capture has shown to drop frames
-//! (Kazuya forward smash, Ike/Chrom/Roy Eruption, Palutena's other moves,
-//! Sephiroth's other specials, Inkling smashes, Ganondorf) have no entry; their
-//! Off tables are untouched and their rows offer On / Off.
+//! (Palutena's other moves, Sephiroth's other specials, Inkling smashes) have
+//! no entry; their Off tables are untouched. Fighters with no move here at
+//! all (Kazuya, Ike, Chrom, Roy, Ganondorf) left the plugin in 0.2.0.
 //!
 //! Layer names here are Hash40 request arguments of `EFFECT*` ACMD calls in
 //! WuBoytH/SSBU-Dumped-Scripts at `PIN`. `shared` lists the `sys_*` requests
@@ -471,8 +471,8 @@ pub const MOVES: &[Move] = &[
         profile: None,
         layers: INKLING_ROLLER_LAYERS,
         shared: &[],
-        // Reduced for the roller is the EFF sibling that keeps the Splash
-        // emitter (`eff_variant`), not a request cull.
+        // No request-cull variant: the 0.1.x Reduced was an EFF sibling
+        // (archived with the feature in 0.2.0). The row offers On / Off.
         variants: &[],
         source: "inkling roller splash parents (0.1.x runtime check, Deluxe 24e714e7)",
     },
@@ -680,7 +680,6 @@ mod tests {
         assert_eq!(by_id("not_a_move"), None);
         assert!(fighter_has_variant(Fighter::Kirby));
         assert!(!fighter_has_variant(Fighter::Inkling));
-        assert!(!fighter_has_variant(Fighter::Kazuya));
         // A variant-less move decides nothing: its layers are not named.
         assert!(!named(hash40("inkling_roller_splash_run")));
         assert_eq!(

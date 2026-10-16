@@ -14,8 +14,6 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = []
-# Host-only EFF-variant availability controls for tests; omitted from NRO builds.
-variant-test = []
 
 [dependencies]
 # Online Deluxe plugin SDK: menu rows on Deluxe's window and its online context.

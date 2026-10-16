@@ -60,7 +60,6 @@ pub fn replacements(
                 false,
             );
             let hash = crate::effects_reduced::request_hash(intent, args[index].raw);
-            let hash = crate::eff_variant::forward(mode, true, hash, context);
             result[index] = (hash != args[index].raw).then_some(hash);
         }
     }

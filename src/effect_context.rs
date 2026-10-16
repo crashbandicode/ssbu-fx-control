@@ -1,17 +1,15 @@
-//! Object-category and move qualification for the peer's 19 character profiles.
+//! Object-category and move qualification for the covered move profiles (the
+//! peer's 19 minus Kazuya forward smash and the Ike / Chrom / Roy Eruptions,
+//! whose fighters left the plugin in 0.2.0).
 //! Constants verified against skyline-smash bed642e lua_const.rs (Smash 13.0.5).
 use crate::effects::hash40;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Profile {
-    KazuyaFSmash,
     FalconPunch,
     NessUpB,
     LucasUpB,
-    IkeNeutralB,
-    ChromNeutralB,
-    RoyNeutralB,
     PalutenaRapidJab,
     PalutenaNeutralB,
     PalutenaUpB,
@@ -44,18 +42,6 @@ struct Rule {
 }
 
 const RULES: &[Rule] = &[
-    Rule {
-        profile: Profile::KazuyaFSmash,
-        kind: 0x5c, // FIGHTER_KIND_DEMON
-        motions: &[
-            hash40("attack_s4"),
-            hash40("attack_s4_s"),
-            hash40("attack_s4_hold"),
-            hash40("attack_s4_start"),
-        ],
-        statuses: &[0x2d, 0x2e, 0x2f],
-        require_both: false,
-    },
     Rule {
         profile: Profile::FalconPunch,
         kind: 0xb, // FIGHTER_KIND_CAPTAIN
@@ -98,66 +84,6 @@ const RULES: &[Rule] = &[
             hash40("special_air_hi_end"),
         ],
         statuses: &[0x1de, 0x1e4, 0x1e5, 0x1e6, 0x1e7, 0x1e8],
-        require_both: false,
-    },
-    Rule {
-        profile: Profile::IkeNeutralB,
-        kind: 0x23, // FIGHTER_KIND_IKE
-        motions: &[
-            hash40("special_n"),
-            hash40("special_air_n"),
-            hash40("special_n_start"),
-            hash40("special_air_n_start"),
-            hash40("special_n_loop"),
-            hash40("special_air_n_loop"),
-            hash40("special_n_hold"),
-            hash40("special_air_n_hold"),
-            hash40("special_n_end"),
-            hash40("special_air_n_end"),
-            hash40("special_n_end_max"),
-            hash40("special_air_n_end_max"),
-        ],
-        statuses: &[0x1dc],
-        require_both: false,
-    },
-    Rule {
-        profile: Profile::ChromNeutralB,
-        kind: 0x1b, // FIGHTER_KIND_CHROM
-        motions: &[
-            hash40("special_n"),
-            hash40("special_air_n"),
-            hash40("special_n_start"),
-            hash40("special_air_n_start"),
-            hash40("special_n_loop"),
-            hash40("special_air_n_loop"),
-            hash40("special_n_hold"),
-            hash40("special_air_n_hold"),
-            hash40("special_n_end"),
-            hash40("special_air_n_end"),
-            hash40("special_n_end_max"),
-            hash40("special_air_n_end_max"),
-        ],
-        statuses: &[0x1dc],
-        require_both: false,
-    },
-    Rule {
-        profile: Profile::RoyNeutralB,
-        kind: 0x1a, // FIGHTER_KIND_ROY
-        motions: &[
-            hash40("special_n"),
-            hash40("special_air_n"),
-            hash40("special_n_start"),
-            hash40("special_air_n_start"),
-            hash40("special_n_loop"),
-            hash40("special_air_n_loop"),
-            hash40("special_n_hold"),
-            hash40("special_air_n_hold"),
-            hash40("special_n_end"),
-            hash40("special_air_n_end"),
-            hash40("special_n_end_max"),
-            hash40("special_air_n_end_max"),
-        ],
-        statuses: &[0x1dc],
         require_both: false,
     },
     Rule {

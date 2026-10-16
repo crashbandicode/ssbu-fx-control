@@ -1,16 +1,16 @@
 //! Per-fighter mode table and the per-request decision.
 //!
 //! The request pipeline is the Deluxe one: `effects_reduced::classify` then
-//! `request_hash` then `eff_variant::forward`. What this plugin adds is the
-//! mode it is given (the mode of the fighter that owns the request,
-//! [`crate::fighters::fighter_for`], or On for a request no row owns), the
-//! per-move variant selection and the harness cull list.
+//! `request_hash`. What this plugin adds is the mode it is given (the mode of
+//! the fighter that owns the request, [`crate::fighters::fighter_for`], or On
+//! for a request no row owns), the per-move variant selection and the harness
+//! cull list. The 0.1.x EFF-sibling forward left in 0.2.0.
 use crate::config::{self, CullList, FxMode, FxScope, Settings, CULL_MAX};
 use crate::effect_context::Context;
+use crate::effects;
 use crate::effects_reduced::{self, FxIntent};
 use crate::fighters::{self, Fighter, COUNT};
 use crate::moves::{self, Selection};
-use crate::{eff_variant, effects};
 use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 
 const ANY_ACTIVE: u8 = 1;
@@ -87,10 +87,9 @@ impl ModeTable {
         true
     }
 
-    /// "All": every page row takes `mode` (Reduced is On on a row without a
-    /// variant). Fighters without a row stay as they are (On).
+    /// "All": every row takes `mode` (Reduced is On on a row without a variant).
     pub fn set_all(&self, mode: FxMode) {
-        for fighter in fighters::PAGE {
+        for fighter in fighters::ALL {
             let value = config::all_value_for(mode, fighter.has_reduced());
             let previous = self.mode(fighter);
             self.modes[fighter.index()].store(value as u8, Ordering::Release);
@@ -208,9 +207,7 @@ impl ModeTable {
 
 /// The context lookup is needed when the owner or the policy depends on the move.
 pub fn needs_context(hash: u64) -> bool {
-    effects::needs_context(hash)
-        || effects_reduced::reduced_named(hash)
-        || eff_variant::wants_context(hash)
+    effects::needs_context(hash) || effects_reduced::reduced_named(hash)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -218,9 +215,8 @@ pub struct Decision {
     pub fighter: Option<Fighter>,
     pub mode: FxMode,
     pub intent: FxIntent,
-    /// After Off/Reduced culling, before the EFF-sibling swap.
-    pub requested: u64,
-    /// What the original request receives.
+    /// What the original request receives: the hash, or `null` when Off or
+    /// Reduced culled it.
     pub forwarded: u64,
 }
 
@@ -242,13 +238,11 @@ pub fn decide(
         &selection,
         listed.is_some(),
     );
-    let requested = effects_reduced::request_hash(intent, hash);
-    let forwarded = eff_variant::forward(mode, scope_allows, requested, context);
+    let forwarded = effects_reduced::request_hash(intent, hash);
     Decision {
         fighter,
         mode,
         intent,
-        requested,
         forwarded,
     }
 }
@@ -290,10 +284,9 @@ mod tests {
         assert_eq!(table.all(), Some(FxMode::On));
         assert!(table.idle(true));
         table.set_all(FxMode::Off);
-        assert!(fighters::PAGE
+        assert!(fighters::ALL
             .iter()
             .all(|fighter| table.mode(*fighter) == FxMode::Off));
-        assert_eq!(table.mode(Fighter::Kazuya), FxMode::On, "no row: untouched");
         assert_eq!(table.all(), Some(FxMode::Off));
         assert!(table.set(Fighter::Ness, FxMode::On));
         assert_eq!(table.all(), None, "rows differ: All shows Unavailable");
@@ -306,7 +299,6 @@ mod tests {
         assert_eq!(table.all(), Some(FxMode::On));
         assert!(table.idle(false) && table.idle(true));
         assert!(!table.set(Fighter::Inkling, FxMode::Reduced));
-        assert!(!table.set(Fighter::Chrom, FxMode::Reduced), "siblings are off");
     }
 
     #[test]
@@ -317,7 +309,7 @@ mod tests {
         assert!(table.generation() > start);
         let mut settings = Settings::default();
         settings.modes[Fighter::Pyra.index()] = FxMode::Reduced;
-        settings.modes[Fighter::Roy.index()] = FxMode::Off;
+        settings.modes[Fighter::Byleth.index()] = FxMode::Off;
         settings.variants[moves::by_id("pyra_side_b").unwrap()] = 2;
         settings.cull = CullList::parse("eflame_sword_open,kirby_onigoroshi_arc");
         table.load(&settings);
@@ -325,7 +317,7 @@ mod tests {
         assert!(!table.idle(true));
         assert!(!table.idle(false), "a Reduced row still counts restores");
         let only_off = ModeTable::new();
-        only_off.set(Fighter::Roy, FxMode::Off);
+        only_off.set(Fighter::Byleth, FxMode::Off);
         assert!(only_off.idle(false));
         assert!(!only_off.idle(true));
         let before = table.generation();
@@ -338,27 +330,27 @@ mod tests {
     #[test]
     fn each_fighter_row_controls_only_its_own_requests() {
         let table = ModeTable::new();
-        table.set(Fighter::Ike, FxMode::Off);
-        let ike = fighter_ctx(0x23, "special_n", 0x1dc);
-        let chrom = fighter_ctx(0x1b, "special_n", 0x1dc);
-        // Ike's global name: Off for Ike.
-        let d = decide(&table, true, hash40("ike_volcano"), None);
-        assert_eq!(d.fighter, Some(Fighter::Ike));
+        table.set(Fighter::CaptainFalcon, FxMode::Off);
+        let falcon = fighter_ctx(0xb, "special_n", 0x1dc);
+        // Falcon's global name: Off for Captain Falcon.
+        let d = decide(&table, true, hash40("captain_fp_flash"), None);
+        assert_eq!(d.fighter, Some(Fighter::CaptainFalcon));
         assert_eq!(d.forwarded, NULL_EFFECT);
         assert_eq!(
-            decide(&table, true, hash40("P_IkeVolcanoAdd"), Some(ike)).forwarded,
+            decide(&table, true, hash40("captain_at_impact"), Some(falcon)).forwarded,
             NULL_EFFECT
         );
-        // Chrom's neutral-B reuses Ike's pillar; Chrom is On, so it stays.
+        // A retired fighter's name (Ike's Eruption pillar) belongs to nobody
+        // since 0.2.0 and passes through whatever the rows say.
         let pillar = hash40("ike_firepiller02");
-        let d = decide(&table, true, pillar, Some(chrom));
-        assert_eq!((d.fighter, d.forwarded), (Some(Fighter::Chrom), pillar));
+        let d = decide(&table, true, pillar, Some(fighter_ctx(0x23, "special_n", 0x1dc)));
+        assert_eq!((d.fighter, d.forwarded), (None, pillar));
         // Out of scope nothing changes.
         assert_eq!(
-            decide(&table, false, hash40("ike_volcano"), None).forwarded,
-            hash40("ike_volcano")
+            decide(&table, false, hash40("captain_fp_flash"), None).forwarded,
+            hash40("captain_fp_flash")
         );
-        // Another fighter's name is untouched by Ike's row.
+        // Another fighter's name is untouched by Falcon's row.
         let trail = hash40("eflame_blazeend_trail");
         assert_eq!(decide(&table, true, trail, None).forwarded, trail);
         table.set(Fighter::Pyra, FxMode::Reduced);
@@ -466,12 +458,7 @@ mod tests {
                 for scope in [true, false] {
                     let intent =
                         effects_reduced::classify(row_mode, scope, hash, None, &selection, false);
-                    let expected = eff_variant::forward(
-                        row_mode,
-                        scope,
-                        effects_reduced::request_hash(intent, hash),
-                        None,
-                    );
+                    let expected = effects_reduced::request_hash(intent, hash);
                     assert_eq!(
                         decide(&table, scope, hash, None).forwarded,
                         expected,
@@ -507,13 +494,13 @@ mod tests {
     }
 
     #[test]
-    fn context_is_requested_for_every_move_or_sibling_dependent_name() {
+    fn context_is_requested_for_every_move_dependent_name() {
         for name in crate::effects_catalog::CONTEXT_NAME_LIST {
             assert!(needs_context(hash40(name)), "{name}");
         }
-        assert!(needs_context(eff_variant::SOURCE));
-        assert!(needs_context(hash40("edge_shadowflare_start")));
         assert!(!needs_context(hash40("sys_hit_normal")));
+        // The 0.1.x sibling parents no longer ask for a context.
+        assert!(!needs_context(hash40("palutena_backlight2")));
         // Move layers ask too (shared names resolve by move context).
         assert!(needs_context(hash40("eflame_sword_open")));
         assert!(needs_context(hash40("kirby_onigoroshi_light")));

@@ -59,23 +59,9 @@ pub enum Code {
     FxReducedRestore = 86,
     /// A reduced-table name was seen on a different move, so it stayed On.
     FxReducedPreserve = 87,
-    /// A sibling file was not registered or its load was rejected.
-    /// `a` is the reason: 1 missing API, 2 transform, 3 size.
-    /// `b` is that file's path hash. The original request stays. This is not Off.
-    FxVariantUnavailable = 91,
-    /// Sibling callback armed (`a` 0, `b` path hash), or one successful load of
-    /// that whole file (`a` path hash, `b` output length in bytes).
-    FxVariantReady = 92,
-    /// Reduced forwarded one parent to its sibling. Sampled on the first swap
-    /// and every 128th. `a` is the EFF path hash. `b` is the original hash.
-    FxVariantUse = 93,
-    /// A kill or detach of an original sibling parent also named its clone.
-    /// Sampled on the first event and every 128th. `a` original, `b` alias.
-    FxVariantCleanup = 94,
-    /// Which cleanup boundary ran: `a` 1 `kill_kind`, 2 `detach_kind`, 3 ACMD
-    /// `EFFECT_OFF_KIND`, 4 ACMD `EFFECT_DETACH_KIND`. `b` is 1 when that exact
-    /// accessor, hash and kill-or-detach was already delivered on this thread.
-    FxCleanupRoute = 95,
+    // 91–95 were the 0.1.x EFF-sibling codes (unavailable / ready / used /
+    // cleanup / cleanup route); the feature left in 0.2.0 and the numbers
+    // stay unused so old logs keep their meaning.
     /// Special Zoom background request (diagnostic only). `a` hash; `b` bits
     /// 0..7 path (1 `req_screen`, 2 `req_screen_system`, 3 ordinary), bit 8
     /// set when `PROBE_CRITICAL_SCREEN` suppressed it.
@@ -212,11 +198,6 @@ mod tests {
         assert_eq!(Code::FxReducedKeep as u16, 85);
         assert_eq!(Code::FxReducedRestore as u16, 86);
         assert_eq!(Code::FxReducedPreserve as u16, 87);
-        assert_eq!(Code::FxVariantUnavailable as u16, 91);
-        assert_eq!(Code::FxVariantReady as u16, 92);
-        assert_eq!(Code::FxVariantUse as u16, 93);
-        assert_eq!(Code::FxVariantCleanup as u16, 94);
-        assert_eq!(Code::FxCleanupRoute as u16, 95);
         assert_eq!(Code::FxCriticalRequest as u16, 96);
         assert_eq!(Code::CriticalProbe as u16, 97);
     }

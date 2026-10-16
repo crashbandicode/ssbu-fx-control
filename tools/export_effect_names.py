@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Regenerate reference/effect_names.txt: every effect-like string literal in
-src/*.rs (move layers, Off tables, catalog, siblings, probe names) plus the
+src/*.rs (move layers, Off tables, catalog, probe names) plus the
 sys_* names the move scripts share. resolve_trace.py uses it to turn trace
 hashes back into names. Add names by hand below the generated block if a
 trace shows an unresolved hash and the dumped scripts name it.

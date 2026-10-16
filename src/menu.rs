@@ -1,15 +1,13 @@
 //! Rows on the Online Deluxe window (plugin SDK, descriptor version 4).
 //!
 //! The plugin asks for its own page in Deluxe's window cycle. Rows, in order:
-//! `Scope` (Online / All), `All` (On / Off / Reduced), one row per ledger
-//! fighter (`fighters::PAGE`: On / Off / Reduced, or On / Off for a fighter
-//! without a Reduced variant), then one group per fighter with variants: a
-//! header row with the fighter's name (not selectable) and, under it, one
-//! value row per move showing the selected variant (`Original`,
-//! `Variant 1 .. N`; the `variant.<move>` value), which changes in place.
-//! Fighters with no ledger move (Kazuya, Ike, Chrom, Roy, Ganondorf) have no
-//! row since 0.2.0, and the 0.1.x `EFF variants` status row is gone with
-//! the sibling feature.
+//! `Scope` (Online / All), `All` (On / Off / Reduced), one row per covered
+//! fighter (`fighters::ALL`, the ten a ledger move belongs to: On / Off /
+//! Reduced, or On / Off for a fighter without a Reduced variant), then one
+//! group per fighter with variants: a header row with the fighter's name (not
+//! selectable) and, under it, one value row per move showing the selected
+//! variant (`Original`, `Variant 1 .. N`; the `variant.<move>` value), which
+//! changes in place.
 //!
 //! "All" has no fourth "Mixed" choice: while the fighter rows differ, its
 //! `current` answers `CHOICE_UNAVAILABLE`, which the host shows as
@@ -20,7 +18,7 @@
 //! for `all=`. Header rows need a Deluxe host with descriptor version 4
 //! (0.5.3); the SDK does not downgrade a spec that carries them.
 use crate::config::{FxMode, FxScope};
-use crate::fighters::{Fighter, PAGE, PAGE_COUNT};
+use crate::fighters::{Fighter, ALL, COUNT};
 use crate::moves;
 use crate::policy::ModeTable;
 use deluxe_plugin_sdk::{OptionSpec, PluginSpec, RequestStatus, RowLayout, Tone};
@@ -46,7 +44,7 @@ const PAGE_VARIANTS: usize = VARIANT_CHOICES.len() - 1;
 /// Option index of the first fighter row.
 const FIRST_FIGHTER: usize = 2;
 /// Option index of the first group row (a fighter header).
-const FIRST_GROUP: usize = FIRST_FIGHTER + PAGE_COUNT;
+const FIRST_GROUP: usize = FIRST_FIGHTER + COUNT;
 /// Group rows: one header per fighter with variants plus one value row per
 /// move with variants.
 pub const GROUP_ROWS: usize = group_slots().0;
@@ -61,17 +59,17 @@ pub enum Slot {
     Move(usize),
 }
 
-const MAX_GROUP_ROWS: usize = PAGE_COUNT + moves::COUNT;
+const MAX_GROUP_ROWS: usize = COUNT + moves::COUNT;
 
-/// Group rows in page order: fighters in `fighters::PAGE` order, each header
+/// Group rows in page order: fighters in `fighters::ALL` order, each header
 /// followed by that fighter's moves in `moves::MOVES` order. The count comes
 /// first so one pass serves both constants.
 const fn group_slots() -> (usize, [Slot; MAX_GROUP_ROWS]) {
     let mut out = [Slot::Move(0); MAX_GROUP_ROWS];
     let mut rows = 0;
     let mut fighter = 0;
-    while fighter < PAGE_COUNT {
-        let owner = PAGE[fighter];
+    while fighter < COUNT {
+        let owner = ALL[fighter];
         let mut first = true;
         let mut index = 0;
         while index < moves::COUNT {
@@ -101,20 +99,15 @@ const GROUP_SLOTS: [Slot; MAX_GROUP_ROWS] = group_slots().1;
 /// Option id of a fighter's header row.
 const fn header_id(fighter: Fighter) -> &'static str {
     match fighter {
-        Fighter::Kazuya => "group_kazuya",
         Fighter::CaptainFalcon => "group_captain_falcon",
         Fighter::Ness => "group_ness",
         Fighter::Lucas => "group_lucas",
-        Fighter::Ike => "group_ike",
-        Fighter::Chrom => "group_chrom",
-        Fighter::Roy => "group_roy",
         Fighter::Palutena => "group_palutena",
         Fighter::Sephiroth => "group_sephiroth",
         Fighter::Pyra => "group_pyra",
         Fighter::Mythra => "group_mythra",
         Fighter::Byleth => "group_byleth",
         Fighter::Inkling => "group_inkling",
-        Fighter::Ganondorf => "group_ganondorf",
         Fighter::Kirby => "group_kirby",
     }
 }
@@ -195,8 +188,8 @@ const fn build_options() -> [OptionSpec; OPTION_COUNT] {
     let mut options = [scope; OPTION_COUNT];
     options[1] = all;
     let mut index = 0;
-    while index < PAGE_COUNT {
-        options[FIRST_FIGHTER + index] = fighter_option(PAGE[index]);
+    while index < COUNT {
+        options[FIRST_FIGHTER + index] = fighter_option(ALL[index]);
         index += 1;
     }
     let mut row = 0;
@@ -233,7 +226,7 @@ pub fn row(option: usize) -> Option<Row> {
         0 => Some(Row::Scope),
         1 => Some(Row::All),
         index if (FIRST_FIGHTER..FIRST_GROUP).contains(&index) => {
-            Some(Row::Fighter(PAGE[index - FIRST_FIGHTER]))
+            Some(Row::Fighter(ALL[index - FIRST_FIGHTER]))
         }
         index if (FIRST_GROUP..OPTION_COUNT).contains(&index) => {
             Some(match GROUP_SLOTS[index - FIRST_GROUP] {
@@ -316,6 +309,7 @@ pub fn request(
 mod tests {
     use super::*;
     use crate::fighters;
+    use crate::moves;
     use deluxe_plugin_sdk::{register, PluginHandler, RegisterError};
 
     struct Handler(&'static ModeTable);
@@ -363,7 +357,6 @@ mod tests {
         let roller = moves::by_id("inkling_roller").unwrap();
         assert_eq!(variant_row(roller), None, "no variants, no row");
         assert_eq!(header_row(Fighter::Inkling), None, "no variants, no header");
-        assert_eq!(header_row(Fighter::Kazuya), None);
         // Headers: one per fighter with variants, label only, never
         // selectable, directly before that fighter's first move row.
         let mut headers = 0;
@@ -439,11 +432,11 @@ mod tests {
     }
 
     #[test]
-    fn rows_are_scope_all_page_fighters_then_groups() {
+    fn rows_are_scope_all_fighters_then_groups() {
         assert_eq!(OPTIONS[0].id, "scope");
         assert_eq!(OPTIONS[1].id, "all");
         assert!(OPTIONS[1].no_persist);
-        for (index, fighter) in PAGE.iter().enumerate() {
+        for (index, fighter) in ALL.iter().enumerate() {
             let option = &OPTIONS[FIRST_FIGHTER + index];
             assert_eq!(option.id, fighter.id());
             assert_eq!(option.label, fighter.label());
@@ -453,13 +446,10 @@ mod tests {
             assert_eq!(option.tones.unwrap()[0], Tone::Ok);
             assert_eq!(row(FIRST_FIGHTER + index), Some(Row::Fighter(*fighter)));
         }
-        // No row for a fighter without a ledger move; Inkling is On / Off.
-        for fighter in fighters::ALL {
-            let has_row = OPTIONS.iter().any(|option| option.id == fighter.id());
-            assert_eq!(has_row, fighter.on_page(), "{fighter:?}");
+        // No row for a retired 0.1.x fighter or the old status row; Inkling is On / Off.
+        for id in ["kazuya", "ike", "chrom", "roy", "ganondorf", "status"] {
+            assert!(!OPTIONS.iter().any(|option| option.id == id), "{id}");
         }
-        assert!(!OPTIONS.iter().any(|option| option.id == "kazuya"));
-        assert!(!OPTIONS.iter().any(|option| option.id == "status"));
         let inkling = OPTIONS
             .iter()
             .find(|option| option.id == "inkling")
@@ -480,12 +470,10 @@ mod tests {
         let table = ModeTable::new();
         assert_eq!(current(&table, 1, true), Some(0));
         assert_eq!(request(&table, 1, 1, true), RequestStatus::Applied);
-        for index in 0..PAGE_COUNT {
+        for index in 0..COUNT {
             assert_eq!(current(&table, FIRST_FIGHTER + index, true), Some(1));
         }
         assert_eq!(current(&table, 1, true), Some(1));
-        // Off-page fighters are untouched by All.
-        assert_eq!(table.mode(Fighter::Kazuya), FxMode::On);
         assert_eq!(
             request(&table, FIRST_FIGHTER + 3, 2, true),
             RequestStatus::Applied
@@ -499,7 +487,7 @@ mod tests {
             RequestStatus::Rejected
         );
         // Inkling (On / Off) refuses Reduced and is On under All = Reduced.
-        let inkling = FIRST_FIGHTER + PAGE.iter().position(|f| *f == Fighter::Inkling).unwrap();
+        let inkling = FIRST_FIGHTER + Fighter::Inkling.index();
         assert_eq!(current(&table, inkling, true), Some(0));
         assert_eq!(request(&table, inkling, 2, true), RequestStatus::Rejected);
     }

@@ -1,12 +1,9 @@
 //! Narrow C ABI surface transcribed from skyline-smash bed642e/src/cpp.rs.
 //! Opaque pointers are forwarded untouched. Eight request hooks chain through
 //! original!(), including Training Modpack's shared EffectModule hooks.
-//! `kill_kind` and `detach_kind` return `u64`. Each calls the clone first, then
-//! the original hash, and returns only that original call. ACMD
-//! `EFFECT_OFF_KIND` and `EFFECT_DETACH_KIND` are void. They call the same
-//! lua_bind entry for the clone, then the original command, and do not rewrite
-//! the Lua stack. A thread-local key of accessor, original hash, and
-//! kill-or-detach skips only that duplicate clone call. FX mode is ignored.
+//! The 0.1.x `kill_kind` / `detach_kind` cleanup hooks (ids 264 / 265), which
+//! redirected the cleanup of swapped EFF siblings, left with that feature in
+//! 0.2.0: the request hooks are the whole surface.
 //!
 //! Ported from Online Deluxe `src/runtime/effects.rs`. The request policy now
 //! takes the mode of the fighter that owns each request (`crate::policy`), and
@@ -143,16 +140,6 @@ unsafe fn policy_hash(accessor: *mut OpaqueAccessor, hash: u64) -> u64 {
     let decision = policy::decide(&TABLE, scope, hash, context);
     let total = crate::effects_reduced::observe(decision.intent, false);
     log_intent(decision.intent, hash, total);
-    if decision.forwarded != decision.requested {
-        let swaps = crate::eff_variant::observe_swap(hash);
-        if swaps == 1 || swaps.is_multiple_of(128) {
-            record(
-                Code::FxVariantUse,
-                crate::eff_variant::source_file(hash),
-                hash,
-            );
-        }
-    }
     decision.forwarded
 }
 
@@ -255,63 +242,7 @@ mod abi {
             arg3: bool,
             arg4: bool,
         ) -> u64;
-        #[link_name = "\u{1}_ZN3app8lua_bind28EffectModule__kill_kind_implEPNS_26BattleObjectModuleAccessorEN3phx6Hash40Ebb"]
-        pub(super) fn kill_kind(
-            module_accessor: *mut OpaqueAccessor,
-            effect: Hash40,
-            arg3: bool,
-            arg4: bool,
-        ) -> u64;
-        #[link_name = "\u{1}_ZN3app8lua_bind30EffectModule__detach_kind_implEPNS_26BattleObjectModuleAccessorEN3phx6Hash40Ei"]
-        pub(super) fn detach_kind(
-            module_accessor: *mut OpaqueAccessor,
-            effect: Hash40,
-            arg3: i32,
-        ) -> u64;
     }
-}
-
-pub(super) fn log_variant_cleanup(original: u64, alias: u64) {
-    use std::sync::atomic::{AtomicU64, Ordering};
-    static COUNT: AtomicU64 = AtomicU64::new(0);
-    let count = COUNT.fetch_add(1, Ordering::Relaxed) + 1;
-    if count == 1 || count.is_multiple_of(128) {
-        record(Code::FxVariantCleanup, original, alias);
-    }
-}
-
-pub(super) fn log_cleanup_route(layer: u64, nested: bool) {
-    use std::sync::atomic::AtomicU64;
-    static COUNTS: [AtomicU64; crate::eff_cleanup::ROUTE_SLOTS] = [
-        AtomicU64::new(0),
-        AtomicU64::new(0),
-        AtomicU64::new(0),
-        AtomicU64::new(0),
-        AtomicU64::new(0),
-        AtomicU64::new(0),
-        AtomicU64::new(0),
-        AtomicU64::new(0),
-    ];
-    if crate::eff_cleanup::take_route_sample(&COUNTS, layer, nested) {
-        record(Code::FxCleanupRoute, layer, u64::from(nested));
-    }
-}
-
-pub(super) unsafe fn invoke_kill_kind(
-    accessor: *mut std::ffi::c_void,
-    hash: u64,
-    arg3: bool,
-    arg4: bool,
-) -> u64 {
-    abi::kill_kind(accessor.cast(), Hash40 { hash }, arg3, arg4)
-}
-
-pub(super) unsafe fn invoke_detach_kind(
-    accessor: *mut std::ffi::c_void,
-    hash: u64,
-    arg3: i32,
-) -> u64 {
-    abi::detach_kind(accessor.cast(), Hash40 { hash }, arg3)
 }
 
 #[skyline::hook(replace = abi::req)]
@@ -489,71 +420,9 @@ unsafe fn ssbu_fx_control_filter_req_screen_system(
     call_original!(module_accessor, arg2, arg3, arg4)
 }
 
-#[skyline::hook(replace = abi::kill_kind)]
-unsafe fn ssbu_fx_control_cleanup_kill_kind(
-    module_accessor: *mut OpaqueAccessor,
-    effect: Hash40,
-    arg3: bool,
-    arg4: bool,
-) -> u64 {
-    let accessor = module_accessor as usize;
-    if let Some(alias) = crate::eff_variant::cleanup_alias(effect.hash) {
-        if crate::eff_cleanup::delivered_matches(
-            accessor,
-            effect.hash,
-            crate::eff_cleanup::CLEANUP_KILL,
-        ) {
-            log_cleanup_route(1, true);
-        } else if let Some(_guard) = crate::eff_cleanup::begin_alias(
-            accessor,
-            effect.hash,
-            crate::eff_cleanup::CLEANUP_KILL,
-            Some(alias),
-        ) {
-            let _ignored = call_original!(module_accessor, Hash40 { hash: alias }, arg3, arg4);
-            log_variant_cleanup(effect.hash, alias);
-            log_cleanup_route(1, false);
-            return call_original!(module_accessor, effect, arg3, arg4);
-        }
-    }
-    call_original!(module_accessor, effect, arg3, arg4)
-}
-
-#[skyline::hook(replace = abi::detach_kind)]
-unsafe fn ssbu_fx_control_cleanup_detach_kind(
-    module_accessor: *mut OpaqueAccessor,
-    effect: Hash40,
-    arg3: i32,
-) -> u64 {
-    let accessor = module_accessor as usize;
-    if let Some(alias) = crate::eff_variant::cleanup_alias(effect.hash) {
-        if crate::eff_cleanup::delivered_matches(
-            accessor,
-            effect.hash,
-            crate::eff_cleanup::CLEANUP_DETACH,
-        ) {
-            log_cleanup_route(2, true);
-        } else if let Some(_guard) = crate::eff_cleanup::begin_alias(
-            accessor,
-            effect.hash,
-            crate::eff_cleanup::CLEANUP_DETACH,
-            Some(alias),
-        ) {
-            let _ignored = call_original!(module_accessor, Hash40 { hash: alias }, arg3);
-            log_variant_cleanup(effect.hash, alias);
-            log_cleanup_route(2, false);
-            return call_original!(module_accessor, effect, arg3);
-        }
-    }
-    call_original!(module_accessor, effect, arg3)
-}
-
 pub(super) fn install() {
     latch_critical_probe();
     latch_trace();
-    // No ARCropolis callbacks since 0.2.0: the 0.1.x EFF siblings never load,
-    // so `eff_variant::forward` is the identity and Reduced is the per-move
-    // variant alone (`archive/0.1.x-appearance-variants` keeps the feature).
     // Online Deluxe's scene hooks are not ported; `super::online` decides
     // whether this plugin needs its own online signal.
     super::acmd::install();
@@ -581,8 +450,6 @@ pub(super) fn install() {
         abi::req_screen_system,
         ssbu_fx_control_filter_req_screen_system
     );
-    install!(264, abi::kill_kind, ssbu_fx_control_cleanup_kill_kind);
-    install!(265, abi::detach_kind, ssbu_fx_control_cleanup_detach_kind);
 }
 
 fn log_entry(id: u64, address: *const ()) -> bool {
