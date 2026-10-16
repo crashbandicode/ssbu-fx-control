@@ -551,7 +551,9 @@ unsafe fn ssbu_fx_control_cleanup_detach_kind(
 pub(super) fn install() {
     latch_critical_probe();
     latch_trace();
-    super::variant::install();
+    // No ARCropolis callbacks since 0.2.0: the 0.1.x EFF siblings never load,
+    // so `eff_variant::forward` is the identity and Reduced is the per-move
+    // variant alone (`archive/0.1.x-appearance-variants` keeps the feature).
     // Online Deluxe's scene hooks are not ported; `super::online` decides
     // whether this plugin needs its own online signal.
     super::acmd::install();

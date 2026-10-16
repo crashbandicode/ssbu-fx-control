@@ -1,9 +1,8 @@
 //! Menu rows on the Online Deluxe window, when Deluxe 0.5.0 or later is loaded.
 //!
 //! Callbacks run on Deluxe's overlay draw thread: they only read and write
-//! the lock-free mode table and the EFF availability atomics.
+//! the lock-free mode table.
 use super::{logging, online, record, Code, TABLE};
-use crate::eff_variant;
 use crate::menu;
 use deluxe_plugin_sdk::{
     negotiated_descriptor_version, register as sdk_register, PluginHandler, RegisterError,
@@ -12,23 +11,9 @@ use deluxe_plugin_sdk::{
 
 struct Handler;
 
-fn variant_status() -> eff_variant::VariantAvailability {
-    menu::variant_status(&[
-        eff_variant::availability(),
-        eff_variant::edge_availability(),
-        eff_variant::ink_availability(),
-        eff_variant::chrom_availability(),
-    ])
-}
-
 impl PluginHandler for Handler {
     fn current(&self, option: usize) -> Option<usize> {
-        menu::current(
-            &TABLE,
-            option,
-            online::source().scope_row_available(),
-            variant_status(),
-        )
+        menu::current(&TABLE, option, online::source().scope_row_available())
     }
 
     fn request(&self, option: usize, choice: usize) -> RequestStatus {

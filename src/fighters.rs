@@ -107,33 +107,70 @@ impl Fighter {
         }
     }
 
-    /// True when the fighter has a move with at least one Reduced variant
-    /// (`moves`) or an EFF sibling (`eff_variant`). A fighter without one is
-    /// offered On / Off only, and "All = Reduced" leaves it On: Reduced never
-    /// silently performs Off. `tests::reduced_support_matches_the_tables`
-    /// derives this from the tables.
+    /// True when the fighter has a ledger move (`moves::MOVES`) with at least
+    /// one Reduced variant. A fighter without one is offered On / Off only,
+    /// and "All = Reduced" leaves it On: Reduced never silently performs Off.
+    /// The 0.1.x EFF siblings (Chrom side B, the roller splash) no longer
+    /// count: that feature is off since 0.2.0 (`archive/0.1.x-appearance-variants`).
     pub const fn has_reduced(self) -> bool {
-        match self {
-            Fighter::CaptainFalcon
-            | Fighter::Ness
-            | Fighter::Lucas
-            | Fighter::Palutena
-            | Fighter::Sephiroth
-            | Fighter::Pyra
-            | Fighter::Mythra
-            | Fighter::Byleth
-            | Fighter::Kirby => true,
-            // Siblings only: Chrom's first side-B trail, the roller splash.
-            Fighter::Chrom | Fighter::Inkling => true,
-            // No ledger move and no sibling: Off tables only.
-            Fighter::Kazuya | Fighter::Ike | Fighter::Roy | Fighter::Ganondorf => false,
+        let mut index = 0;
+        while index < crate::moves::MOVES.len() {
+            let mv = &crate::moves::MOVES[index];
+            if mv.fighter as usize == self as usize && !mv.variants.is_empty() {
+                return true;
+            }
+            index += 1;
         }
+        false
+    }
+
+    /// True when a ledger move belongs to the fighter: the fighter has a row
+    /// on the Deluxe page and a line in the INI. The others (Kazuya, Ike,
+    /// Chrom, Roy, Ganondorf) keep their 0.1.x Off tables compiled but have
+    /// no row and stay On; they are not in `PAGE`.
+    pub const fn on_page(self) -> bool {
+        let mut index = 0;
+        while index < crate::moves::MOVES.len() {
+            if crate::moves::MOVES[index].fighter as usize == self as usize {
+                return true;
+            }
+            index += 1;
+        }
+        false
     }
 
     pub fn from_id(id: &str) -> Option<Fighter> {
         ALL.iter().copied().find(|fighter| fighter.id() == id)
     }
 }
+
+const fn page_list() -> (usize, [Fighter; COUNT]) {
+    let mut out = ALL;
+    let mut count = 0;
+    let mut index = 0;
+    while index < COUNT {
+        if ALL[index].on_page() {
+            out[count] = ALL[index];
+            count += 1;
+        }
+        index += 1;
+    }
+    (count, out)
+}
+
+/// Fighters with a page row and an INI line, in menu order: the ones a
+/// ledger move belongs to.
+pub const PAGE_COUNT: usize = page_list().0;
+pub const PAGE: [Fighter; PAGE_COUNT] = {
+    let list = page_list().1;
+    let mut out = [Fighter::Kazuya; PAGE_COUNT];
+    let mut index = 0;
+    while index < PAGE_COUNT {
+        out[index] = list[index];
+        index += 1;
+    }
+    out
+};
 
 /// Fighter of a move profile. `Edge*` is Sephiroth.
 pub const fn of_profile(profile: Profile) -> Fighter {
@@ -605,30 +642,44 @@ mod tests {
     }
 
     #[test]
-    fn reduced_support_matches_the_tables() {
-        let mut derived = [false; COUNT];
-        for fighter in ALL {
-            if moves::fighter_has_variant(fighter) {
-                derived[fighter.index()] = true;
-            }
-        }
-        // EFF siblings: Palutena up air, Shadow Flare, roller splash, Chrom side B.
-        for name in [
-            "palutena_backlight2",
-            "edge_shadowflare_bullet",
-            "inkling_roller_splash_walk",
-            "chrom_mc_1",
-        ] {
-            assert!(crate::eff_variant::cleanup_alias(hash40(name)).is_some());
-            derived[name_fighter(name).unwrap().index()] = true;
-        }
+    fn reduced_support_and_page_rows_follow_the_ledger() {
         for fighter in ALL {
             assert_eq!(
                 fighter.has_reduced(),
-                derived[fighter.index()],
+                moves::fighter_has_variant(fighter),
                 "{fighter:?}"
             );
+            assert_eq!(
+                fighter.on_page(),
+                moves::MOVES.iter().any(|mv| mv.fighter == fighter),
+                "{fighter:?}"
+            );
+            assert_eq!(PAGE.contains(&fighter), fighter.on_page(), "{fighter:?}");
         }
+        // Siblings no longer make a fighter Reduced-capable.
+        assert!(!Fighter::Chrom.has_reduced());
+        assert!(!Fighter::Inkling.has_reduced());
+        assert!(Fighter::Inkling.on_page(), "roller is a ledger move");
+        assert!(!Fighter::Chrom.on_page());
+        assert_eq!(
+            PAGE,
+            [
+                Fighter::CaptainFalcon,
+                Fighter::Ness,
+                Fighter::Lucas,
+                Fighter::Palutena,
+                Fighter::Sephiroth,
+                Fighter::Pyra,
+                Fighter::Mythra,
+                Fighter::Byleth,
+                Fighter::Inkling,
+                Fighter::Kirby,
+            ]
+        );
+        assert_eq!(PAGE_COUNT, 10);
+        // Menu order is `ALL` order.
+        let positions: Vec<usize> = PAGE.iter().map(|fighter| fighter.index()).collect();
+        assert!(positions.windows(2).all(|pair| pair[0] < pair[1]));
     }
 
     #[test]

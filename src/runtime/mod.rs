@@ -10,7 +10,6 @@ mod logging;
 mod memory;
 mod online;
 mod plugin;
-mod variant;
 
 use crate::{
     diagnostics::{Code, Recorder},

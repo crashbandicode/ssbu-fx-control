@@ -87,9 +87,10 @@ impl ModeTable {
         true
     }
 
-    /// "All": every row takes `mode` (Reduced is On on a row without a variant).
+    /// "All": every page row takes `mode` (Reduced is On on a row without a
+    /// variant). Fighters without a row stay as they are (On).
     pub fn set_all(&self, mode: FxMode) {
-        for fighter in fighters::ALL {
+        for fighter in fighters::PAGE {
             let value = config::all_value_for(mode, fighter.has_reduced());
             let previous = self.mode(fighter);
             self.modes[fighter.index()].store(value as u8, Ordering::Release);
@@ -289,21 +290,23 @@ mod tests {
         assert_eq!(table.all(), Some(FxMode::On));
         assert!(table.idle(true));
         table.set_all(FxMode::Off);
-        assert!(fighters::ALL
+        assert!(fighters::PAGE
             .iter()
             .all(|fighter| table.mode(*fighter) == FxMode::Off));
+        assert_eq!(table.mode(Fighter::Kazuya), FxMode::On, "no row: untouched");
         assert_eq!(table.all(), Some(FxMode::Off));
         assert!(table.set(Fighter::Ness, FxMode::On));
         assert_eq!(table.all(), None, "rows differ: All shows Unavailable");
         table.set_all(FxMode::Reduced);
         assert_eq!(table.all(), Some(FxMode::Reduced));
-        assert_eq!(table.mode(Fighter::Kazuya), FxMode::On, "no variant: On");
+        assert_eq!(table.mode(Fighter::Inkling), FxMode::On, "no variant: On");
         assert!(table.any_reduced());
         assert!(!table.idle(false));
         table.set_all(FxMode::On);
         assert_eq!(table.all(), Some(FxMode::On));
         assert!(table.idle(false) && table.idle(true));
-        assert!(!table.set(Fighter::Kazuya, FxMode::Reduced));
+        assert!(!table.set(Fighter::Inkling, FxMode::Reduced));
+        assert!(!table.set(Fighter::Chrom, FxMode::Reduced), "siblings are off");
     }
 
     #[test]

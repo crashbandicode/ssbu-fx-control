@@ -209,13 +209,17 @@ impl Settings {
         self.modes[fighter.index()]
     }
 
+    /// Common value of the page rows (`fighters::PAGE`), or `None` while they
+    /// differ. Fighters without a row are not consulted: they stay On.
     pub fn all(&self) -> Option<FxMode> {
-        common_mode(&self.modes, &reduced_support())
+        let modes = fighters::PAGE.map(|fighter| self.mode(fighter));
+        common_mode(&modes, &page_support())
     }
 }
 
-pub fn reduced_support() -> [bool; COUNT] {
-    fighters::ALL.map(Fighter::has_reduced)
+/// Reduced support of the page rows, in `fighters::PAGE` order.
+pub fn page_support() -> [bool; fighters::PAGE_COUNT] {
+    fighters::PAGE.map(Fighter::has_reduced)
 }
 
 const VARIANT_PREFIX: &str = "variant.";
@@ -230,17 +234,19 @@ fn assignment(line: &str) -> Option<(&str, &str)> {
     Some((key.trim(), value.trim()))
 }
 
-/// Parses the INI. Never fails: anything unusable keeps its default.
+/// Parses the INI. Never fails: anything unusable keeps its default. A line
+/// for a fighter without a page row (`kazuya=off` from a 0.1.x file) is an
+/// unknown key: ignored here, kept verbatim by `render`.
 pub fn parse(text: &str) -> Settings {
     let mut settings = Settings::default();
-    let support = reduced_support();
     // `all=` first, so fighter lines override it in any order. Last valid wins.
     for (key, value) in text.lines().filter_map(assignment) {
         match key {
             "all" => {
                 if let Some(mode) = FxMode::from_token(value) {
-                    for (slot, reduced) in settings.modes.iter_mut().zip(support) {
-                        *slot = all_value_for(mode, reduced);
+                    for fighter in fighters::PAGE {
+                        settings.modes[fighter.index()] =
+                            all_value_for(mode, fighter.has_reduced());
                     }
                 }
             }
@@ -254,7 +260,7 @@ pub fn parse(text: &str) -> Settings {
         }
     }
     for (key, value) in text.lines().filter_map(assignment) {
-        if let Some(fighter) = Fighter::from_id(key) {
+        if let Some(fighter) = page_fighter(key) {
             if let Some(mode) =
                 FxMode::from_token(value).and_then(|mode| accepted(mode, fighter.has_reduced()))
             {
@@ -271,6 +277,11 @@ pub fn parse(text: &str) -> Settings {
         }
     }
     settings
+}
+
+/// The fighter an INI key names, if that fighter has a page row.
+fn page_fighter(key: &str) -> Option<Fighter> {
+    Fighter::from_id(key).filter(|fighter| fighter.on_page())
 }
 
 const HEADER: &str = "# ssbu-fx-control. Values: on | off | reduced. scope: online | all.
@@ -292,7 +303,7 @@ pub fn render(existing: &str, settings: &Settings) -> String {
             "scope" => Some(Some(settings.scope.token().to_owned())),
             "all" => Some(all.map(|mode| mode.token().to_owned())),
             _ => {
-                if let Some(fighter) = Fighter::from_id(key) {
+                if let Some(fighter) = page_fighter(key) {
                     return Some(Some(settings.mode(fighter).token().to_owned()));
                 }
                 let index = key.strip_prefix(VARIANT_PREFIX).and_then(moves::by_id)?;
@@ -334,7 +345,7 @@ pub fn render(existing: &str, settings: &Settings) -> String {
         .collect();
     let order = ["scope", "all"]
         .into_iter()
-        .chain(fighters::ALL.iter().map(|fighter| fighter.id()))
+        .chain(fighters::PAGE.iter().map(|fighter| fighter.id()))
         .chain(variant_keys.iter().map(String::as_str));
     for key in order {
         if written.iter().any(|done| done == key) {
@@ -368,15 +379,16 @@ mod tests {
             scope: FxScope::All,
             ..Settings::default()
         };
-        settings.modes[Fighter::Kazuya.index()] = FxMode::Off;
-        settings.modes[Fighter::Inkling.index()] = FxMode::Reduced;
+        settings.modes[Fighter::Inkling.index()] = FxMode::Off;
+        settings.modes[Fighter::Pyra.index()] = FxMode::Reduced;
         let kirby = moves::by_id("kirby_hammer").unwrap();
         settings.variants[kirby] = 3;
         let text = render("", &settings);
         assert!(text.starts_with("# ssbu-fx-control"));
         assert!(text.contains("scope=all\n"));
-        assert!(text.contains("kazuya=off\n"));
-        assert!(text.contains("inkling=reduced\n"));
+        assert!(text.contains("inkling=off\n"));
+        assert!(text.contains("pyra=reduced\n"));
+        assert!(!text.contains("kazuya="), "no line without a row:\n{text}");
         assert!(text.contains("variant.kirby_hammer=3\n"));
         assert!(
             !text.contains("variant.pyra_side_b="),
@@ -393,16 +405,20 @@ mod tests {
 
     #[test]
     fn all_applies_first_and_fighter_lines_override_in_any_order() {
-        let text = "kazuya=on\nall=off\nscope=all\n";
+        let text = "ness=on\nall=off\nscope=all\n";
         let settings = parse(text);
         assert_eq!(settings.scope, FxScope::All);
-        assert_eq!(settings.mode(Fighter::Kazuya), FxMode::On);
-        assert_eq!(settings.mode(Fighter::Ganondorf), FxMode::Off);
+        assert_eq!(settings.mode(Fighter::Ness), FxMode::On);
+        assert_eq!(settings.mode(Fighter::Kirby), FxMode::Off);
         assert_eq!(settings.all(), None);
+        // No row, no effect: all= never reaches an off-page fighter.
+        assert_eq!(settings.mode(Fighter::Kazuya), FxMode::On);
+        assert_eq!(settings.mode(Fighter::Ganondorf), FxMode::On);
         let uniform = parse("all=reduced\n");
         assert_eq!(uniform.all(), Some(FxMode::Reduced));
-        assert_eq!(uniform.mode(Fighter::Kazuya), FxMode::On, "no variant: On");
+        assert_eq!(uniform.mode(Fighter::Inkling), FxMode::On, "no variant: On");
         assert_eq!(uniform.mode(Fighter::Kirby), FxMode::Reduced);
+        assert_eq!(uniform.mode(Fighter::Kazuya), FxMode::On);
         let text = render("", &uniform);
         assert!(text.contains("all=reduced\n"));
         assert_eq!(parse(&text), uniform);
@@ -410,21 +426,29 @@ mod tests {
 
     #[test]
     fn unknown_keys_comments_and_bad_values_survive() {
-        let existing = "# my notes\nfuture_key=7\nkazuya=maybe\n\n; other\nscope = online # trailing\nkazuya=off\nall=sideways\n";
+        let existing = "# my notes\nfuture_key=7\npyra=maybe\n\n; other\nscope = online # trailing\npyra=off\nall=sideways\nkazuya=off\n";
         let settings = parse(existing);
-        assert_eq!(settings.mode(Fighter::Kazuya), FxMode::Off);
+        assert_eq!(settings.mode(Fighter::Pyra), FxMode::Off);
         assert_eq!(settings.scope, FxScope::Online);
+        // A 0.1.x line for a fighter without a row is ignored and kept.
+        assert_eq!(settings.mode(Fighter::Kazuya), FxMode::On);
         let out = render(existing, &settings);
         assert!(out.starts_with("# my notes\nfuture_key=7\n"));
         assert!(out.contains("\n; other\n"));
-        // First kazuya line is rewritten in place; the later duplicate is dropped.
-        assert_eq!(out.matches("kazuya=").count(), 1);
         assert!(out.contains("kazuya=off\n"));
+        assert_eq!(out.matches("kazuya=").count(), 1);
+        // First pyra line is rewritten in place; the later duplicate is dropped.
+        assert_eq!(out.matches("pyra=").count(), 1);
+        assert!(out.contains("pyra=off\n"));
         assert!(!out.contains("maybe"));
         // Mixed rows: the stale all= line is removed rather than left wrong.
         assert!(!out.contains("all="));
         for fighter in fighters::ALL {
-            assert!(out.contains(&format!("{}=", fighter.id())), "{fighter:?}");
+            assert_eq!(
+                out.contains(&format!("{}=", fighter.id())),
+                fighter.on_page() || fighter == Fighter::Kazuya,
+                "{fighter:?}"
+            );
         }
         assert_eq!(parse(&out), settings);
     }
