@@ -5,12 +5,12 @@ version = 4
 [[package]]
 name = "deluxe-plugin-abi"
 version = "4.0.0"
-source = "git+https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite?rev=ab79355250c93b365bb3f85db40cd159e05febc3#ab79355250c93b365bb3f85db40cd159e05febc3"
+source = "git+https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite?rev=e862970e373d5d35fdc638ef119764ba56dc24f4#e862970e373d5d35fdc638ef119764ba56dc24f4"
 
 [[package]]
 name = "deluxe-plugin-sdk"
 version = "4.0.0"
-source = "git+https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite?rev=ab79355250c93b365bb3f85db40cd159e05febc3#ab79355250c93b365bb3f85db40cd159e05febc3"
+source = "git+https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite?rev=e862970e373d5d35fdc638ef119764ba56dc24f4#e862970e373d5d35fdc638ef119764ba56dc24f4"
 dependencies = [
  "deluxe-plugin-abi",
  "skyline",

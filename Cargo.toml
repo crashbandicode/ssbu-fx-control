@@ -20,8 +20,8 @@ variant-test = []
 [dependencies]
 # Online Deluxe plugin SDK: menu rows on Deluxe's window and its online context.
 # Resolved at runtime; this NRO also runs without Deluxe installed.
-# Pinned to the plugin API v4 commit (header and inline rows; Deluxe 0.5.3).
-deluxe-plugin-sdk = { git = "https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite", rev = "ab79355250c93b365bb3f85db40cd159e05febc3" }
+# Pinned to the Deluxe 0.5.3 commit with plugin API v4 and the SDK null-table fix for header rows.
+deluxe-plugin-sdk = { git = "https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite", rev = "e862970e373d5d35fdc638ef119764ba56dc24f4" }
 
 [target.'cfg(target_os = "switch")'.dependencies]
 skyline = "=0.6.0"
