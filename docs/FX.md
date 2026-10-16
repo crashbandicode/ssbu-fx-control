@@ -51,6 +51,10 @@ Each effect request is decided with the mode of the fighter that owns it
 | `kirby_` | Kirby |
 
 A request no fighter owns passes through untouched, whatever the rows say.
+Since 0.2.0 only the ten fighters with a ledger move have a page row and an INI
+line (Captain Falcon, Ness, Lucas, Palutena, Sephiroth, Pyra, Mythra, Byleth,
+Inkling, Kirby); Kazuya, Ike, Chrom, Roy and Ganondorf always stay On, and
+their Off tables are compiled but unreachable.
 
 Shared names inside a move table follow the move's owner, never their prefix:
 `sys_flash` (Ness and Lucas up special), `sys_smash_flash` and
@@ -155,21 +159,28 @@ PK Fire) claims its layers by name. Variants are accepted only through the
 console protocol in [HARNESS](HARNESS.md). The character-wide and
 appearance-chosen tables of 0.1.x are on the archive branch.
 
-Palutena's up-air resource has a separate lighter copy so its visible cue
-remains; the stock resource is kept for On. The Off policy deliberately
+In 0.1.x, Palutena's up-air resource had a separate lighter copy (an EFF
+sibling, see below) so its visible cue remained; that copy no longer loads. The Off policy deliberately
 protects that up-air parent, so Off is not a zero-cost reference for that
 parent.
 
-EFF siblings exist for Palutena up air, Shadow Flare charge/projectile layers,
-the Inkling roller splashes and Chrom's first side-B trail. The plugin
-registers one ARCropolis load callback per file (`ef_palutena.eff`,
-`ef_edge.eff`, `ef_inkling.eff`, `ef_chrom.eff`); each loads the stock file
-into ARCropolis's buffer and appends that file's siblings. A file's siblings
-are used only after its own callback succeeded; a failed or missing callback
-leaves that cue original (the status row shows it). Stock game assets are read
-at runtime and are not distributed. A sibling also answers the original's
-`kill_kind`/`detach_kind` and ACMD `EFFECT_OFF_KIND`/`EFFECT_DETACH_KIND`, so
-cleanup works after Reduced is switched back to On.
+### EFF siblings (historical, off since 0.2.0)
+
+In 0.1.x, EFF siblings existed for Palutena up air, Shadow Flare
+charge/projectile layers, the Inkling roller splashes and Chrom's first side-B
+trail. The plugin registered one ARCropolis load callback per file
+(`ef_palutena.eff`, `ef_edge.eff`, `ef_inkling.eff`, `ef_chrom.eff`); each
+loaded the stock file into ARCropolis's buffer and appended that file's
+siblings, which answered the original's `kill_kind`/`detach_kind` and ACMD
+`EFFECT_OFF_KIND`/`EFFECT_DETACH_KIND` so cleanup worked after Reduced was
+switched back to On.
+
+Since 0.2.0 the feature is off: the plugin registers no ARCropolis load
+callback, no sibling file loads, and Reduced is exactly the per-move variant
+from `src/moves.rs`. ARCropolis is not needed by this plugin. Chrom and Inkling
+have no Reduced variant. Event codes 91 to 95 are no longer emitted; the
+`kill_kind` and `detach_kind` hooks (264, 265) are still installed. The code
+survives only on the branch `archive/0.1.x-appearance-variants`.
 
 The roller runtime check (Deluxe `24e714e7`) exposed an Off-table alias gap:
 the peer names `inkling_roller`, while the game requests

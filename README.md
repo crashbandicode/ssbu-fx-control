@@ -46,25 +46,26 @@ move and only LLUltra drops, so every pass runs on LLUltra.
 | PK Thunder | Lucas | 1 launch burst off (0.1.x) | SpecialAirHi, pkthunder Move |
 | Hammer | Kirby | 1 charge glow off · 2 + smoke and wind · 3 only arc and max burst | SpecialS*/AirS*, kirby_hammer SpecialS* |
 | Specials | Byleth | 1 axe flare 3 and hold 2 (0.1.x; specials not extracted) | 0.1.x |
-| Roller | Inkling | EFF sibling keeping the Splash emitter (no cull) | 0.1.x runtime check |
+| Roller | Inkling | none: Reduced was an EFF sibling in 0.1.x, which is off since 0.2.0; Inkling offers On / Off | 0.1.x runtime check |
 | Gigaflare | Sephiroth | 1 first burst and sign off, overlay skipped (0.1.x) | edge_fire Burst S/M/L |
 
-Rows without a move here (Kazuya, Ike, Roy, Ganondorf) offer On / Off; their
-Off tables are unchanged from 0.1.x. Chrom keeps Reduced for its EFF sibling.
+Kazuya, Ike, Chrom, Roy and Ganondorf have no move here and therefore no row
+on the Deluxe page and no INI line: they always stay On. Their 0.1.x Off
+tables stay compiled but are unreachable. The 0.1.x EFF sibling feature
+(Palutena up air, Shadow Flare, Inkling roller, Chrom side B) is off: the
+plugin registers no ARCropolis callback, no sibling file loads, and Reduced is
+exactly the per-move variant from `src/moves.rs`. ARCropolis is not needed by
+this plugin. The feature survives only on the branch
+`archive/0.1.x-appearance-variants`.
 
 ## Install
 
 1. Copy `libssbu_fx_control.nro` to
    `sd:/atmosphere/contents/01006A800016E000/romfs/skyline/plugins/`.
-2. [ARCropolis](https://github.com/Raytwo/ARCropolis) is needed for the
-   Reduced **EFF siblings** (Palutena up air, Shadow Flare, Inkling roller,
-   Chrom side B): the plugin registers ARCropolis load callbacks for those four
-   `.eff` files. Without ARCropolis those cues stay original in Reduced (never
-   Off); everything else works.
-3. [Online Deluxe](https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite)
+2. [Online Deluxe](https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite)
    is optional. With Deluxe 0.5.3 or later the plugin gets its own page in
-   Deluxe's window (0.2.0 uses the version 4 header and inline rows, which
-   Deluxe 0.5.0 to 0.5.2 refuse: no page, effects still work from the INI)
+   Deluxe's window (0.2.0 uses the version 4 header and per-move value rows,
+   which Deluxe 0.5.0 to 0.5.2 refuse: no page, effects still work from the INI)
    and uses Deluxe's online tracking. Without Deluxe, edit the INI and the
    plugin tracks online play itself.
 
@@ -73,8 +74,7 @@ defaults on first start (everything On, scope Online, variant 1 per move).
 See [configuration](docs/CONFIGURATION.md).
 
 Do not run it next to an older Deluxe (0.4.x) with that FX row set to Off or
-Reduced: both would filter the same requests, and both register ARCropolis
-callbacks for the same four files.
+Reduced: both would filter the same requests.
 
 ## The Deluxe page
 
@@ -82,15 +82,19 @@ With Online Deluxe 0.5.0 or later, the plugin registers an own page titled
 **FX Control** in Deluxe's window cycle (L+R or ZL+ZR, then D-pad Down):
 settings, plugins, **FX Control**, performance, hidden. Up/Down selects a row,
 Left/Right changes it. In a match the page becomes Deluxe's compact strip.
+Deluxe 0.5.3 has an INI key `hide_pages=plugins,own_pages,performance` and
+Settings rows that take pages out of this cycle, so it can also run settings,
+FX Control, hidden.
+
+The page has 33 rows:
 
 | Row | Choices | Notes |
 | --- | --- | --- |
 | Scope | Online / All | Online: online play outside Training. With a Deluxe older than 0.5.0 there is no online signal: the row reads `Unavailable` and Online never applies (effects stay original until `scope=all` is set in the INI). |
-| All | On / Off / Reduced | Sets every fighter row. Shows `Unavailable` while the rows differ. |
-| Kazuya ... Kirby | On / Off / Reduced | One row per covered fighter. On is green, Reduced yellow. Rows without a variant offer On / Off. |
-| Captain Falcon … Sephiroth (group headers) | — | One header per fighter with variants; not selectable, Up/Down skip it. |
-| Falcon Punch, Blazing End, … Gigaflare | `Original  Variant 1 .. N` on one line, the selected one bracketed | One inline row per move under its fighter's header (the `variant.<move>` value). Left/Right move the selection; it takes effect at once while the fighter's row is Reduced; Original leaves that move untouched. Needs Deluxe 0.5.3 (plugin API v4). |
-| EFF variants | Ready / Pending / Unavailable | Read-only. Ready: a sibling file loaded. Pending: none loaded yet. Unavailable: ARCropolis missing or a file rejected. |
+| All | On / Off / Reduced | Sets the ten fighter rows. Shows `Unavailable` while the rows differ. |
+| Captain Falcon, Ness, Lucas, Palutena, Sephiroth, Pyra, Mythra, Byleth, Inkling, Kirby | On / Off / Reduced | One row per fighter with a move on the ledger (`src/moves.rs`), in this order. On is green, Reduced yellow. Inkling offers On / Off only (the roller has no variant). Kazuya, Ike, Chrom, Roy and Ganondorf have no row and always stay On. |
+| Group headers | — | One header per fighter with variants; not selectable, Up/Down skip it. |
+| Falcon Punch, Blazing End, … Gigaflare | `Original`, `Variant 1` .. `Variant N` | One value row per move under its fighter's header, showing the selected variant (the `variant.<move>` value); Left/Right change it in place. It takes effect at once while the fighter's row is Reduced; Original leaves that move untouched. Needs Deluxe 0.5.3 (plugin API v4). |
 
 ![FX Control page](docs/media/fx-control-page.png)
 

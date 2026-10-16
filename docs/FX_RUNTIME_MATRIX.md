@@ -1,5 +1,9 @@
 # FX runtime acceptance matrix
 
+The sibling-based rows (Palutena up-air, Sephiroth side-B, Inkling roller,
+Chrom side-B) and the Kazuya, Ike, Roy and Ganondorf rows describe the archived
+0.1.x behavior and do not apply to 0.2.0.
+
 Every row below was observed with an **Online Deluxe** build (NRO prefixes
 `833c`, `24e`, `7c`, `b99`, `c0`) and its single global FX row, before the
 feature moved into this plugin. ssbu-fx-control runs the same request
