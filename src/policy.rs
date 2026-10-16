@@ -125,6 +125,14 @@ impl ModeTable {
         selection
     }
 
+    /// The Reduced variant selected for one move (0 = original); 0 for an
+    /// index outside `moves::MOVES`.
+    pub fn variant(&self, index: usize) -> u8 {
+        self.variants
+            .get(index)
+            .map_or(0, |value| value.load(Ordering::Relaxed))
+    }
+
     /// Selects variant `number` for move `index` (0 = original). Refuses a
     /// number above the move's variant count.
     pub fn select_variant(&self, index: usize, number: u8) -> bool {

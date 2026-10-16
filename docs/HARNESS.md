@@ -52,9 +52,11 @@ rule is about. Eden under a CPU quota ranks candidates cheaply (the 0.1.x
    bodies, keeping at least the cue that tells the opponent what is coming
    (the throw, the explosion, the projectile). A variant that nulls every
    layer is Off, not Reduced; the tests refuse it.
-3. **Console passes.** Set the fighter's row to Reduced, `variant.<move>=n`,
-   capture, analyse; repeat per variant. Where a candidate is close, bisect
-   with `cull=` (below) before adding a new variant.
+3. **Console passes.** Set the fighter's row to Reduced and the move's
+   variant row (Deluxe page, or `variant.<move>=n` in the INI), capture,
+   analyse; repeat per variant without leaving Training: the row applies at
+   once. Where a candidate is close, bisect with `cull=` (below) before
+   adding a new variant.
 4. **Record.** Ledger row per move and variant; `status` in `moves.rs`
    follows the ledger; a VALIDATION-style entry in both repositories.
 5. **Media.** On / accepted-variant GIF pair for the README, taken in Eden.
@@ -63,7 +65,7 @@ rule is about. Eden under a CPU quota ranks candidates cheaply (the 0.1.x
 
 | Switch | Where | What it does |
 | --- | --- | --- |
-| `variant.<move>=N` | `config.ini` | Selects the Reduced variant per move (0 = original). Written by the plugin only when not the default. |
+| `variant.<move>=N` | `config.ini`, or the move's row on the Deluxe page | Selects the Reduced variant per move (0 = original). Written by the plugin only when not the default. |
 | `cull=<name>,<name>` | `config.ini` | Up to 16 extra request names (with a covered fighter's prefix) nulled while that fighter's row is Reduced and the scope allows. Bisection tool: null one more layer without editing the tables. Read at start; never rewritten. |
 | `TRACE_EFFECTS` | marker file in `sd:/ultimate/ssbu_fx_control/` | Latched at start. Every request hook records the first time it sees each (name, actor category, kind, status) as event code 110, up to 512 keys per boot. `tools/resolve_trace.py events.log` prints the names per actor kind (names from `reference/effect_names.txt`; regenerate with `tools/export_effect_names.py`, add script names by hand under `# manual`). |
 

@@ -44,7 +44,9 @@ cull=eflame_sword_open       # harness: extra names nulled while that fighter is
   `inkling_roller`, `sephiroth_gigaflare`). 0 keeps that move original while
   the row is Reduced; a number above the move's variant count keeps the
   default (1). The plugin writes the line only when the value is not the
-  default. See [HARNESS](HARNESS.md).
+  default. The same value is the move's row on the Deluxe page (Original /
+  Variant 1 .. N); a change there is saved to this line by the plugin's own
+  saver, like `all=`. See [HARNESS](HARNESS.md).
 - `cull=<name>,<name>`: up to 16 request names, each with a covered
   fighter's prefix, nulled while that fighter's row is Reduced and the scope
   allows. A name without a known prefix is skipped. Read at start, kept
