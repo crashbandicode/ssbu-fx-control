@@ -1,10 +1,12 @@
-//! Rows on the Online Deluxe window (plugin SDK, descriptor version 3).
+//! Rows on the Online Deluxe window (plugin SDK, descriptor version 4).
 //!
 //! The plugin asks for its own page in Deluxe's window cycle. Rows, in order:
 //! `Scope` (Online / All), `All` (On / Off / Reduced), one row per covered
 //! fighter (On / Off / Reduced, or On / Off for a fighter without a Reduced
-//! variant), one row per move with variants (Original / Variant 1 .. N, the
-//! `variant.<move>` value) and a read-only `EFF variants` status row.
+//! variant), then one group per fighter with variants: a header row with the
+//! fighter's name (not selectable) and, under it, one inline row per move
+//! showing `Original  Variant 1 .. N` with the selected one bracketed (the
+//! `variant.<move>` value); last a read-only `EFF variants` status row.
 //!
 //! "All" has no fourth "Mixed" choice: while the fighter rows differ, its
 //! `current` answers `CHOICE_UNAVAILABLE`, which the host shows as
@@ -12,13 +14,14 @@
 //!
 //! The variant rows have no host config key: the plugin's own saver writes
 //! `variant.<move>=N` from the table (only when not the default), as it does
-//! for `all=`.
+//! for `all=`. Header and inline rows need a Deluxe host with descriptor
+//! version 4 (0.5.3); the SDK does not downgrade a spec that carries them.
 use crate::config::{FxMode, FxScope};
 use crate::eff_variant::VariantAvailability;
 use crate::fighters::{self, Fighter, COUNT};
 use crate::moves;
 use crate::policy::ModeTable;
-use deluxe_plugin_sdk::{OptionSpec, PluginSpec, RequestStatus, Tone};
+use deluxe_plugin_sdk::{OptionSpec, PluginSpec, RequestStatus, RowLayout, Tone};
 
 pub const PLUGIN_ID: &str = "fx_control";
 pub const PLUGIN_LABEL: &str = "FX Control";
@@ -42,49 +45,102 @@ const PAGE_VARIANTS: usize = VARIANT_CHOICES.len() - 1;
 
 /// Option index of the first fighter row.
 const FIRST_FIGHTER: usize = 2;
-/// Option index of the first variant row.
-const FIRST_VARIANT: usize = FIRST_FIGHTER + COUNT;
-/// Moves with at least one variant: one page row each.
-pub const VARIANT_ROWS: usize = variant_row_moves().0;
+/// Option index of the first group row (a fighter header).
+const FIRST_GROUP: usize = FIRST_FIGHTER + COUNT;
+/// Group rows: one header per fighter with variants plus one inline row per
+/// move with variants.
+pub const GROUP_ROWS: usize = group_slots().0;
 /// Option index of the status row.
-pub const STATUS_ROW: usize = FIRST_VARIANT + VARIANT_ROWS;
+pub const STATUS_ROW: usize = FIRST_GROUP + GROUP_ROWS;
 pub const OPTION_COUNT: usize = STATUS_ROW + 1;
 
-/// Move index (into `moves::MOVES`) behind each variant row, in table order;
-/// the count comes first so one pass serves both constants.
-const fn variant_row_moves() -> (usize, [usize; moves::COUNT]) {
-    let mut out = [0usize; moves::COUNT];
+/// What one group row stands for.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Slot {
+    /// The fighter's header (not selectable).
+    Header(Fighter),
+    /// The inline variant row of `moves::MOVES[index]`.
+    Move(usize),
+}
+
+const MAX_GROUP_ROWS: usize = COUNT + moves::COUNT;
+
+/// Group rows in page order: fighters in `fighters::ALL` order, each header
+/// followed by that fighter's moves in `moves::MOVES` order. The count comes
+/// first so one pass serves both constants.
+const fn group_slots() -> (usize, [Slot; MAX_GROUP_ROWS]) {
+    let mut out = [Slot::Move(0); MAX_GROUP_ROWS];
     let mut rows = 0;
-    let mut index = 0;
-    while index < moves::COUNT {
-        if !moves::MOVES[index].variants.is_empty() {
-            assert!(
-                moves::MOVES[index].variants.len() <= PAGE_VARIANTS,
-                "VARIANT_CHOICES needs one entry per variant plus Original"
-            );
-            out[rows] = index;
-            rows += 1;
+    let mut fighter = 0;
+    while fighter < COUNT {
+        let owner = fighters::ALL[fighter];
+        let mut first = true;
+        let mut index = 0;
+        while index < moves::COUNT {
+            let mv = &moves::MOVES[index];
+            if mv.fighter as usize == owner as usize && !mv.variants.is_empty() {
+                assert!(
+                    mv.variants.len() <= PAGE_VARIANTS,
+                    "VARIANT_CHOICES needs one entry per variant plus Original"
+                );
+                if first {
+                    out[rows] = Slot::Header(owner);
+                    rows += 1;
+                    first = false;
+                }
+                out[rows] = Slot::Move(index);
+                rows += 1;
+            }
+            index += 1;
         }
-        index += 1;
+        fighter += 1;
     }
     (rows, out)
 }
 
-const VARIANT_ROW_MOVES: [usize; moves::COUNT] = variant_row_moves().1;
+const GROUP_SLOTS: [Slot; MAX_GROUP_ROWS] = group_slots().1;
 
-const fn variant_option(mv: &'static moves::Move) -> OptionSpec {
-    let shown = mv.variants.len() + 1;
-    let choices: &'static [&'static str] = &VARIANT_CHOICES;
-    let tones: &'static [Tone] = &VARIANT_TONES;
-    OptionSpec {
-        id: mv.id,
-        label: mv.label,
-        choices: choices.split_at(shown).0,
-        config_key: None,
-        values: None,
-        no_persist: true,
-        tones: Some(tones.split_at(shown).0),
-        read_only: false,
+/// Option id of a fighter's header row.
+const fn header_id(fighter: Fighter) -> &'static str {
+    match fighter {
+        Fighter::Kazuya => "group_kazuya",
+        Fighter::CaptainFalcon => "group_captain_falcon",
+        Fighter::Ness => "group_ness",
+        Fighter::Lucas => "group_lucas",
+        Fighter::Ike => "group_ike",
+        Fighter::Chrom => "group_chrom",
+        Fighter::Roy => "group_roy",
+        Fighter::Palutena => "group_palutena",
+        Fighter::Sephiroth => "group_sephiroth",
+        Fighter::Pyra => "group_pyra",
+        Fighter::Mythra => "group_mythra",
+        Fighter::Byleth => "group_byleth",
+        Fighter::Inkling => "group_inkling",
+        Fighter::Ganondorf => "group_ganondorf",
+        Fighter::Kirby => "group_kirby",
+    }
+}
+
+const fn group_option(slot: Slot) -> OptionSpec {
+    match slot {
+        Slot::Header(fighter) => OptionSpec::header(header_id(fighter), fighter.label()),
+        Slot::Move(index) => {
+            let mv = &moves::MOVES[index];
+            let shown = mv.variants.len() + 1;
+            let choices: &'static [&'static str] = &VARIANT_CHOICES;
+            let tones: &'static [Tone] = &VARIANT_TONES;
+            OptionSpec {
+                id: mv.id,
+                label: mv.short,
+                choices: choices.split_at(shown).0,
+                config_key: None,
+                values: None,
+                no_persist: true,
+                tones: Some(tones.split_at(shown).0),
+                read_only: false,
+                layout: RowLayout::Inline,
+            }
+        }
     }
 }
 
@@ -107,6 +163,7 @@ const fn fighter_option(fighter: Fighter) -> OptionSpec {
         no_persist: false,
         tones: Some(if reduced { &MODE_TONES } else { &ON_OFF_TONES }),
         read_only: false,
+        layout: RowLayout::Value,
     }
 }
 
@@ -120,6 +177,7 @@ const fn build_options() -> [OptionSpec; OPTION_COUNT] {
         no_persist: false,
         tones: None,
         read_only: false,
+        layout: RowLayout::Value,
     };
     // The plugin's own thread writes `all=` with every fighter line; the host
     // would write only the one key.
@@ -132,6 +190,7 @@ const fn build_options() -> [OptionSpec; OPTION_COUNT] {
         no_persist: true,
         tones: Some(&MODE_TONES),
         read_only: false,
+        layout: RowLayout::Value,
     };
     let status = OptionSpec {
         id: "status",
@@ -142,6 +201,7 @@ const fn build_options() -> [OptionSpec; OPTION_COUNT] {
         no_persist: true,
         tones: Some(&STATUS_TONES),
         read_only: true,
+        layout: RowLayout::Value,
     };
     let mut options = [status; OPTION_COUNT];
     options[0] = scope;
@@ -152,8 +212,8 @@ const fn build_options() -> [OptionSpec; OPTION_COUNT] {
         index += 1;
     }
     let mut row = 0;
-    while row < VARIANT_ROWS {
-        options[FIRST_VARIANT + row] = variant_option(&moves::MOVES[VARIANT_ROW_MOVES[row]]);
+    while row < GROUP_ROWS {
+        options[FIRST_GROUP + row] = group_option(GROUP_SLOTS[row]);
         row += 1;
     }
     options
@@ -174,6 +234,8 @@ pub enum Row {
     Scope,
     All,
     Fighter(Fighter),
+    /// A fighter's group header: label only, never selected.
+    Header(Fighter),
     /// The Reduced variant of one move (index into `moves::MOVES`).
     Variant(usize),
     Status,
@@ -184,11 +246,14 @@ pub fn row(option: usize) -> Option<Row> {
         0 => Some(Row::Scope),
         1 => Some(Row::All),
         STATUS_ROW => Some(Row::Status),
-        index if (FIRST_FIGHTER..FIRST_VARIANT).contains(&index) => {
+        index if (FIRST_FIGHTER..FIRST_GROUP).contains(&index) => {
             Some(Row::Fighter(fighters::ALL[index - FIRST_FIGHTER]))
         }
-        index if (FIRST_VARIANT..STATUS_ROW).contains(&index) => {
-            Some(Row::Variant(VARIANT_ROW_MOVES[index - FIRST_VARIANT]))
+        index if (FIRST_GROUP..STATUS_ROW).contains(&index) => {
+            Some(match GROUP_SLOTS[index - FIRST_GROUP] {
+                Slot::Header(fighter) => Row::Header(fighter),
+                Slot::Move(move_index) => Row::Variant(move_index),
+            })
         }
         _ => None,
     }
@@ -196,10 +261,19 @@ pub fn row(option: usize) -> Option<Row> {
 
 /// The option index of a move's variant row, if the move has variants.
 pub fn variant_row(move_index: usize) -> Option<usize> {
-    VARIANT_ROW_MOVES[..VARIANT_ROWS]
+    GROUP_SLOTS[..GROUP_ROWS]
         .iter()
-        .position(|&index| index == move_index)
-        .map(|row| FIRST_VARIANT + row)
+        .position(|slot| *slot == Slot::Move(move_index))
+        .map(|row| FIRST_GROUP + row)
+}
+
+/// The option index of a fighter's header row, if the fighter has a move
+/// with variants.
+pub fn header_row(fighter: Fighter) -> Option<usize> {
+    GROUP_SLOTS[..GROUP_ROWS]
+        .iter()
+        .position(|slot| *slot == Slot::Header(fighter))
+        .map(|row| FIRST_GROUP + row)
 }
 
 /// One status value for the four EFF files: any failure is Unavailable, any
@@ -233,6 +307,7 @@ pub fn current(
         Row::Scope => scope_row_available.then_some(table.scope() as usize),
         Row::All => table.all().map(|mode| mode as usize),
         Row::Fighter(fighter) => Some(table.mode(fighter) as usize),
+        Row::Header(_) => None,
         Row::Variant(index) => Some(usize::from(table.variant(index))),
         Row::Status => Some(status_choice(status)),
     }
@@ -273,7 +348,7 @@ pub fn request(
             Ok(number) if table.select_variant(index, number) => RequestStatus::Applied,
             _ => RequestStatus::Rejected,
         },
-        Some(Row::Status) | None => RequestStatus::Rejected,
+        Some(Row::Header(_) | Row::Status) | None => RequestStatus::Rejected,
     }
 }
 
@@ -303,12 +378,17 @@ mod tests {
             Err(RegisterError::HostMissing)
         );
         const { assert!(OPTION_COUNT <= deluxe_plugin_sdk::abi::MAX_OPTIONS) };
-        assert_eq!(VARIANT_ROWS, 12, "every ledger move but Inkling Roller");
         assert_eq!(
-            OPTION_COUNT, 30,
-            "scope, all, 15 fighters, 12 variant rows, status"
+            GROUP_ROWS,
+            9 + 12,
+            "nine fighters with variants, every ledger move but Inkling Roller"
+        );
+        assert_eq!(
+            OPTION_COUNT, 39,
+            "scope, all, 15 fighters, 9 headers + 12 inline rows, status"
         );
         assert!(SPEC.own_page);
+        assert!(OPTIONS.iter().any(OptionSpec::needs_version_4));
     }
 
     #[test]
@@ -318,6 +398,38 @@ mod tests {
         let kirby = moves::by_id("kirby_hammer").unwrap();
         let roller = moves::by_id("inkling_roller").unwrap();
         assert_eq!(variant_row(roller), None, "no variants, no row");
+        assert_eq!(header_row(Fighter::Inkling), None, "no variants, no header");
+        assert_eq!(header_row(Fighter::Kazuya), None);
+        // Headers: one per fighter with variants, label only, never
+        // selectable, directly before that fighter's first move row.
+        let mut headers = 0;
+        for fighter in fighters::ALL {
+            let Some(option) = header_row(fighter) else {
+                assert!(!moves::fighter_has_variant(fighter));
+                continue;
+            };
+            headers += 1;
+            assert!(moves::fighter_has_variant(fighter));
+            assert_eq!(row(option), Some(Row::Header(fighter)));
+            let spec = &OPTIONS[option];
+            assert_eq!(spec.layout, RowLayout::Header);
+            assert_eq!(spec.label, fighter.label());
+            assert!(spec.choices.is_empty() && spec.read_only && spec.no_persist);
+            assert_eq!(current(&table, option, true, status), None);
+            assert_eq!(request(&table, option, 0, true), RequestStatus::Rejected);
+            let first_move = moves::MOVES
+                .iter()
+                .position(|mv| mv.fighter == fighter && !mv.variants.is_empty())
+                .unwrap();
+            assert_eq!(variant_row(first_move), Some(option + 1));
+        }
+        assert_eq!(headers, 9);
+        // Pyra's three moves sit under one header.
+        let pyra = header_row(Fighter::Pyra).unwrap();
+        assert!(matches!(row(pyra + 1), Some(Row::Variant(_))));
+        assert!(matches!(row(pyra + 2), Some(Row::Variant(_))));
+        assert!(matches!(row(pyra + 3), Some(Row::Variant(_))));
+        assert!(matches!(row(pyra + 4), Some(Row::Header(Fighter::Mythra))));
         let mut seen = 0;
         for (index, mv) in moves::MOVES.iter().enumerate() {
             let Some(option) = variant_row(index) else {
@@ -325,11 +437,15 @@ mod tests {
                 continue;
             };
             seen += 1;
-            assert!((FIRST_VARIANT..STATUS_ROW).contains(&option));
+            assert!((FIRST_GROUP..STATUS_ROW).contains(&option));
             assert_eq!(row(option), Some(Row::Variant(index)));
+            // The move sits after its fighter's header.
+            assert!(header_row(mv.fighter).unwrap() < option);
             let spec = &OPTIONS[option];
+            assert_eq!(spec.layout, RowLayout::Inline);
             assert_eq!(spec.id, mv.id);
-            assert_eq!(spec.label, mv.label);
+            assert_eq!(spec.label, mv.short);
+            assert!(spec.label.len() <= deluxe_plugin_sdk::abi::MAX_LABEL_LEN);
             assert_eq!(spec.choices.len(), mv.variants.len() + 1);
             assert_eq!(spec.choices[0], "Original");
             assert_eq!(spec.tones.unwrap().len(), spec.choices.len());
@@ -349,7 +465,7 @@ mod tests {
                 RequestStatus::Rejected
             );
         }
-        assert_eq!(seen, VARIANT_ROWS);
+        assert_eq!(seen + headers, GROUP_ROWS);
         let option = variant_row(kirby).unwrap();
         assert_eq!(OPTIONS[option].choices.len(), 4);
         assert_eq!(request(&table, option, 0, true), RequestStatus::Applied);
@@ -377,7 +493,7 @@ mod tests {
         assert!(status.read_only && status.no_persist);
         assert_eq!(row(STATUS_ROW), Some(Row::Status));
         assert_eq!(row(OPTION_COUNT), None);
-        assert!(matches!(row(FIRST_VARIANT), Some(Row::Variant(_))));
+        assert_eq!(row(FIRST_GROUP), Some(Row::Header(Fighter::CaptainFalcon)));
         // A fighter without a Reduced variant gets On / Off only.
         let narrow = OptionSpec {
             choices: &ON_OFF_CHOICES,

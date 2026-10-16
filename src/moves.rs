@@ -50,6 +50,8 @@ pub struct Move {
     /// Stable id: the INI key suffix and Online Deluxe's `drs_moves` name.
     pub id: &'static str,
     pub label: &'static str,
+    /// Row label on the Deluxe page, under the fighter's header.
+    pub short: &'static str,
     pub fighter: Fighter,
     /// The policy's move context, when one exists. A move without a profile
     /// is matched by its layer names alone (they are unique to the move).
@@ -192,6 +194,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "falcon_punch",
         label: "Falcon Punch",
+        short: "Falcon Punch",
         fighter: Fighter::CaptainFalcon,
         profile: Some(Profile::FalconPunch),
         layers: FALCON_PUNCH_LAYERS,
@@ -216,6 +219,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "pyra_side_b",
         label: "Pyra Blazing End",
+        short: "Blazing End",
         fighter: Fighter::Pyra,
         profile: None,
         layers: PYRA_SIDE_B_LAYERS,
@@ -260,6 +264,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "pyra_neutral_b",
         label: "Pyra Flame Nova",
+        short: "Flame Nova",
         fighter: Fighter::Pyra,
         profile: None,
         layers: PYRA_NEUTRAL_B_LAYERS,
@@ -295,6 +300,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "pyra_up_b",
         label: "Pyra Prominence Revolt",
+        short: "Prominence Revolt",
         fighter: Fighter::Pyra,
         profile: None,
         layers: PYRA_UP_B_LAYERS,
@@ -327,6 +333,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "mythra_specials",
         label: "Mythra specials",
+        short: "Specials",
         fighter: Fighter::Mythra,
         profile: None,
         layers: MYTHRA_SPECIALS_LAYERS,
@@ -340,6 +347,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "palutena_explosive_flame",
         label: "Palutena Explosive Flame",
+        short: "Explosive Flame",
         fighter: Fighter::Palutena,
         profile: Some(Profile::PalutenaSideB),
         layers: PALUTENA_EXPLOSIVE_FLAME_LAYERS,
@@ -358,6 +366,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "ness_pk_thunder",
         label: "Ness PK Thunder",
+        short: "PK Thunder",
         fighter: Fighter::Ness,
         profile: Some(Profile::NessUpB),
         layers: NESS_PK_THUNDER_LAYERS,
@@ -371,6 +380,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "ness_pk_fire",
         label: "Ness PK Fire",
+        short: "PK Fire",
         fighter: Fighter::Ness,
         profile: None,
         layers: NESS_PK_FIRE_LAYERS,
@@ -387,6 +397,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "lucas_pk_thunder",
         label: "Lucas PK Thunder",
+        short: "PK Thunder",
         fighter: Fighter::Lucas,
         profile: Some(Profile::LucasUpB),
         layers: LUCAS_PK_THUNDER_LAYERS,
@@ -400,6 +411,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "kirby_hammer",
         label: "Kirby Hammer",
+        short: "Hammer",
         fighter: Fighter::Kirby,
         profile: None,
         layers: KIRBY_HAMMER_LAYERS,
@@ -440,6 +452,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "byleth_specials",
         label: "Byleth specials",
+        short: "Specials",
         fighter: Fighter::Byleth,
         profile: None,
         layers: BYLETH_SPECIALS_LAYERS,
@@ -453,6 +466,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "inkling_roller",
         label: "Inkling Roller",
+        short: "Roller",
         fighter: Fighter::Inkling,
         profile: None,
         layers: INKLING_ROLLER_LAYERS,
@@ -465,6 +479,7 @@ pub const MOVES: &[Move] = &[
     Move {
         id: "sephiroth_gigaflare",
         label: "Sephiroth Gigaflare",
+        short: "Gigaflare",
         fighter: Fighter::Sephiroth,
         profile: Some(Profile::EdgeNeutralB),
         layers: SEPHIROTH_GIGAFLARE_LAYERS,

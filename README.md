@@ -62,9 +62,11 @@ Off tables are unchanged from 0.1.x. Chrom keeps Reduced for its EFF sibling.
    `.eff` files. Without ARCropolis those cues stay original in Reduced (never
    Off); everything else works.
 3. [Online Deluxe](https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite)
-   is optional. With Deluxe 0.5.0 or later the plugin gets its own page in
-   Deluxe's window and uses Deluxe's online tracking. Without Deluxe, edit the
-   INI and the plugin tracks online play itself.
+   is optional. With Deluxe 0.5.3 or later the plugin gets its own page in
+   Deluxe's window (0.2.0 uses the version 4 header and inline rows, which
+   Deluxe 0.5.0 to 0.5.2 refuse: no page, effects still work from the INI)
+   and uses Deluxe's online tracking. Without Deluxe, edit the INI and the
+   plugin tracks online play itself.
 
 Settings live in `sd:/ultimate/ssbu_fx_control/config.ini`, created with the
 defaults on first start (everything On, scope Online, variant 1 per move).
@@ -86,7 +88,8 @@ Left/Right changes it. In a match the page becomes Deluxe's compact strip.
 | Scope | Online / All | Online: online play outside Training. With a Deluxe older than 0.5.0 there is no online signal: the row reads `Unavailable` and Online never applies (effects stay original until `scope=all` is set in the INI). |
 | All | On / Off / Reduced | Sets every fighter row. Shows `Unavailable` while the rows differ. |
 | Kazuya ... Kirby | On / Off / Reduced | One row per covered fighter. On is green, Reduced yellow. Rows without a variant offer On / Off. |
-| Falcon Punch ... Sephiroth Gigaflare | Original / Variant 1 .. N | One row per move with variants (the `variant.<move>` value). Takes effect at once while the fighter's row is Reduced; Original leaves that move untouched. |
+| Captain Falcon … Sephiroth (group headers) | — | One header per fighter with variants; not selectable, Up/Down skip it. |
+| Falcon Punch, Blazing End, … Gigaflare | `Original  Variant 1 .. N` on one line, the selected one bracketed | One inline row per move under its fighter's header (the `variant.<move>` value). Left/Right move the selection; it takes effect at once while the fighter's row is Reduced; Original leaves that move untouched. Needs Deluxe 0.5.3 (plugin API v4). |
 | EFF variants | Ready / Pending / Unavailable | Read-only. Ready: a sibling file loaded. Pending: none loaded yet. Unavailable: ARCropolis missing or a file rejected. |
 
 ![FX Control page](docs/media/fx-control-page.png)
