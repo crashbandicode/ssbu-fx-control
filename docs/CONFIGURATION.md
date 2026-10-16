@@ -34,8 +34,10 @@ cull=eflame_sword_open       # harness: extra names nulled while that fighter is
 - Fighter lines exist only for the ten fighters that have a move on the ledger
   and a row on the Deluxe page (`fighters::PAGE`). A line for another fighter
   (for example `kazuya=off` from an older file) is ignored on load and kept
-  verbatim on rewrite. Kazuya, Ike, Chrom, Roy and Ganondorf always stay On;
-  their 0.1.x Off tables stay compiled but are unreachable.
+  verbatim on rewrite. Kazuya, Ike, Chrom, Roy and Ganondorf are removed from
+  the code (no Off tables, no move profiles, no name prefixes); their lines
+  (`kazuya=`, `ike=`, `chrom=`, `roy=`, `ganondorf=`) are unknown keys and
+  their effect requests pass through untouched.
 - `reduced` on a fighter without a Reduced variant is ignored (the row stays
   On): in 0.2 that is Inkling, whose roller has no variant.
 - `variant.<move>=N`: the Reduced variant for one move of `src/moves.rs`
@@ -127,13 +129,14 @@ Event codes keep their Online Deluxe numbers:
 | 27 / 28 / 29 | ACMD effect seen / Off substituted / argument rejected |
 | 30 | Online source (`a` 1 Deluxe, 2 own hooks, 3 unavailable, 4 undetected); `b` 1 own mark set, 2 cleared by a stage load |
 | 84 / 85 / 86 / 87 | Reduced cull / keep / restore (scope blocked) / preserve (name on another move) |
-| 91 / 92 / 93 | EFF sibling unavailable / ready / used (not emitted since 0.2.0) |
-| 94 / 95 | Sibling cleanup / cleanup route (not emitted since 0.2.0) |
+| 91 to 95 | Retired 0.1.x sibling codes, not in the code (numbers reserved) |
 | 96 / 97 | Special Zoom probe request / marker latched |
 | 99 | Menu registration (`a` handle or negative error, `-100` no host; `b` descriptor version) |
 | 110 | `TRACE_EFFECTS`: first request of a (name, actor) pair (`a` Hash40; `b` bits 0–7 category, 8–23 kind, 24–39 status, 40–55 ordinal). At startup `a` = 0, `b` = 1 when the marker was latched |
 
-Hook ids: 256 to 265 are the EffectModule request, screen, `kill_kind` and
-`detach_kind` hooks (264 and 265, `kill_kind` and `detach_kind`, are still
-installed although the sibling cleanup they served is off); `0x110` to `0x11b` the ACMD commands; `0x16ccab8` and
-`0x25d9288` the own online hooks.
+Hook ids: 256 to 263 are the eight EffectModule request and screen hooks;
+`0x110` to `0x119` the ten ACMD effect commands; `0x16ccab8` and `0x25d9288`
+the own online hooks (installed only when no Deluxe host provides the online
+signal). The 0.1.x `kill_kind` / `detach_kind` hooks (264, 265) and the ACMD
+`EFFECT_OFF_KIND` / `EFFECT_DETACH_KIND` hooks (`0x11a`, `0x11b`) are not
+installed.

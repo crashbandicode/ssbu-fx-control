@@ -46,16 +46,19 @@ move and only LLUltra drops, so every pass runs on LLUltra.
 | PK Thunder | Lucas | 1 launch burst off (0.1.x) | SpecialAirHi, pkthunder Move |
 | Hammer | Kirby | 1 charge glow off · 2 + smoke and wind · 3 only arc and max burst | SpecialS*/AirS*, kirby_hammer SpecialS* |
 | Specials | Byleth | 1 axe flare 3 and hold 2 (0.1.x; specials not extracted) | 0.1.x |
-| Roller | Inkling | none: Reduced was an EFF sibling in 0.1.x, which is off since 0.2.0; Inkling offers On / Off | 0.1.x runtime check |
+| Roller | Inkling | none: Reduced was an EFF sibling in 0.1.x, which is deleted in 0.2.0; Inkling offers On / Off | 0.1.x runtime check |
 | Gigaflare | Sephiroth | 1 first burst and sign off, overlay skipped (0.1.x) | edge_fire Burst S/M/L |
 
-Kazuya, Ike, Chrom, Roy and Ganondorf have no move here and therefore no row
-on the Deluxe page and no INI line: they always stay On. Their 0.1.x Off
-tables stay compiled but are unreachable. The 0.1.x EFF sibling feature
-(Palutena up air, Shadow Flare, Inkling roller, Chrom side B) is off: the
-plugin registers no ARCropolis callback, no sibling file loads, and Reduced is
-exactly the per-move variant from `src/moves.rs`. ARCropolis is not needed by
-this plugin. The feature survives only on the branch
+Kazuya, Ike, Chrom, Roy and Ganondorf have no move here and are removed from
+the code: no fighter entry, no Off tables, no move profiles, no name prefixes.
+Their effect requests pass through untouched, like any uncovered fighter's, and
+their INI lines are unknown keys (ignored on load, kept on rewrite). The 0.1.x
+EFF sibling feature (Palutena up air, Shadow Flare, Inkling roller, Chrom side
+B) is deleted: the `kill_kind` / `detach_kind` hooks (264, 265) and the ACMD
+`EFFECT_OFF_KIND` / `EFFECT_DETACH_KIND` hooks (0x11a, 0x11b) are no longer
+installed, the plugin registers no ARCropolis callback, and Reduced is exactly
+the per-move variant from `src/moves.rs`. ARCropolis is not needed by this
+plugin. The removed code survives only on the branch
 `archive/0.1.x-appearance-variants`.
 
 ## Install
@@ -92,7 +95,7 @@ The page has 33 rows:
 | --- | --- | --- |
 | Scope | Online / All | Online: online play outside Training. With a Deluxe older than 0.5.0 there is no online signal: the row reads `Unavailable` and Online never applies (effects stay original until `scope=all` is set in the INI). |
 | All | On / Off / Reduced | Sets the ten fighter rows. Shows `Unavailable` while the rows differ. |
-| Captain Falcon, Ness, Lucas, Palutena, Sephiroth, Pyra, Mythra, Byleth, Inkling, Kirby | On / Off / Reduced | One row per fighter with a move on the ledger (`src/moves.rs`), in this order. On is green, Reduced yellow. Inkling offers On / Off only (the roller has no variant). Kazuya, Ike, Chrom, Roy and Ganondorf have no row and always stay On. |
+| Captain Falcon, Ness, Lucas, Palutena, Sephiroth, Pyra, Mythra, Byleth, Inkling, Kirby | On / Off / Reduced | One row per fighter with a move on the ledger (`src/moves.rs`), in this order. On is green, Reduced yellow. Inkling offers On / Off only (the roller has no variant). Kazuya, Ike, Chrom, Roy and Ganondorf are not covered: no row, requests pass through untouched. |
 | Group headers | — | One header per fighter with variants; not selectable, Up/Down skip it. |
 | Falcon Punch, Blazing End, … Gigaflare | `Original`, `Variant 1` .. `Variant N` | One value row per move under its fighter's header, showing the selected variant (the `variant.<move>` value); Left/Right change it in place. It takes effect at once while the fighter's row is Reduced; Original leaves that move untouched. Needs Deluxe 0.5.3 (plugin API v4). |
 

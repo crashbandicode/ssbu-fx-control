@@ -8,7 +8,7 @@ benefit ([performance method](FX_PERFORMANCE_METHOD.md)).
 
 This policy is Online Deluxe's character-FX feature, moved into its own
 plugin. The tables, the request classification (`effects_reduced::classify`,
-`request_hash`, `eff_variant::forward`) and the hooks are Deluxe's, ported from
+`request_hash`) and the hooks are Deluxe's, ported from
 `intpa/ssbu-online-deluxe-rewrite` at `f3fe436`. What changed is the mode:
 Deluxe had one global FX mode; this plugin has one per covered fighter.
 
@@ -26,42 +26,40 @@ Each effect request is decided with the mode of the fighter that owns it
    that fighter, by kind.
 3. Otherwise the **name** decides, through a map built at compile time from
    every name the policy acts on without a move: the Off tables
-   (`effects::TARGET_NAMES`, `effects_catalog::LEGACY_NAMES`), the
-   character-wide Reduced tables (Pyra, Mythra, Byleth, Inkling, Ganondorf),
-   `chrom_mc_1`, `palutena_backlight2` and the Gigaflare screen overlay. Each
+   (`effects::TARGET_NAMES`, `effects_catalog::LEGACY_NAMES`), the name tables
+   of the moves in `src/moves.rs` and the Gigaflare screen overlay. Each
    name is classified by its character prefix; a name with no prefix, or two,
    fails the build.
 
 | Prefix | Fighter |
 | --- | --- |
-| `demon_` | Kazuya |
 | `captain_` | Captain Falcon |
 | `ness_`, `P_Ness` | Ness |
 | `lucas_`, `P_Lucas` | Lucas |
-| `ike_`, `P_Ike` | Ike |
-| `chrom_`, `P_Chrom` | Chrom |
-| `roy_`, `P_Roy` | Roy |
 | `palutena_`, `P_Palutena` | Palutena |
 | `edge_`, `P_Edge` | Sephiroth |
 | `eflame_`, `P_Eflame` | Pyra |
 | `elight_`, `P_Elight` | Mythra |
 | `master_` | Byleth |
 | `inkling_` | Inkling |
-| `ganon_` | Ganondorf |
 | `kirby_` | Kirby |
 
 A request no fighter owns passes through untouched, whatever the rows say.
-Since 0.2.0 only the ten fighters with a ledger move have a page row and an INI
-line (Captain Falcon, Ness, Lucas, Palutena, Sephiroth, Pyra, Mythra, Byleth,
-Inkling, Kirby); Kazuya, Ike, Chrom, Roy and Ganondorf always stay On, and
-their Off tables are compiled but unreachable.
+The plugin covers exactly ten fighters (`fighters::ALL`: Captain Falcon, Ness,
+Lucas, Palutena, Sephiroth, Pyra, Mythra, Byleth, Inkling, Kirby), each with a
+page row and an INI line. Kazuya, Ike, Chrom, Roy and Ganondorf were removed
+from the code in 0.2.0 (no fighter entry, Off tables, move profiles or name
+prefixes): their requests pass through untouched, like any uncovered fighter's.
+The 16 move profiles that remain are Falcon Punch, Ness up special, Lucas up
+special, Palutena (rapid jab, neutral special, up special, side special, up
+smash, tilts, wing smash, up air) and Sephiroth (forward smash, purple dash,
+neutral special, down special, side special).
 
 Shared names inside a move table follow the move's owner, never their prefix:
 `sys_flash` (Ness and Lucas up special), `sys_smash_flash` and
-`sys_smash_flash_s` (Sephiroth smashes), Ike's pillar layers that Chrom's and
-Roy's neutral special reuse (`ike_firepiller00/02`, `ike_fireground00`) and
-Sephiroth's prefix-less emitter-style parents (`flare1`, `aura1`, `line1`, and
-so on). Those names need a context; without one they pass through. The test
+`sys_smash_flash_s` (Sephiroth smashes) and Sephiroth's prefix-less
+emitter-style parents (`flare1`, `aura1`, `line1`, and so on). Those names need
+a context; without one they pass through. The test
 `fighters::tests::move_table_names_follow_the_move_owner` lists them and fails
 when the tables change without the list.
 
@@ -160,27 +158,20 @@ console protocol in [HARNESS](HARNESS.md). The character-wide and
 appearance-chosen tables of 0.1.x are on the archive branch.
 
 In 0.1.x, Palutena's up-air resource had a separate lighter copy (an EFF
-sibling, see below) so its visible cue remained; that copy no longer loads. The Off policy deliberately
-protects that up-air parent, so Off is not a zero-cost reference for that
-parent.
+sibling, see below) so its visible cue remained; that copy was deleted in
+0.2.0. The Off policy deliberately protects that up-air parent, so Off is not
+a zero-cost reference for that parent.
 
-### EFF siblings (historical, off since 0.2.0)
+### EFF siblings (deleted in 0.2.0)
 
-In 0.1.x, EFF siblings existed for Palutena up air, Shadow Flare
-charge/projectile layers, the Inkling roller splashes and Chrom's first side-B
-trail. The plugin registered one ARCropolis load callback per file
-(`ef_palutena.eff`, `ef_edge.eff`, `ef_inkling.eff`, `ef_chrom.eff`); each
-loaded the stock file into ARCropolis's buffer and appended that file's
-siblings, which answered the original's `kill_kind`/`detach_kind` and ACMD
-`EFFECT_OFF_KIND`/`EFFECT_DETACH_KIND` so cleanup worked after Reduced was
-switched back to On.
-
-Since 0.2.0 the feature is off: the plugin registers no ARCropolis load
-callback, no sibling file loads, and Reduced is exactly the per-move variant
-from `src/moves.rs`. ARCropolis is not needed by this plugin. Chrom and Inkling
-have no Reduced variant. Event codes 91 to 95 are no longer emitted; the
-`kill_kind` and `detach_kind` hooks (264, 265) are still installed. The code
-survives only on the branch `archive/0.1.x-appearance-variants`.
+The 0.1.x EFF sibling feature (ARCropolis load callbacks that appended lighter
+copies of Palutena up air, Shadow Flare, the Inkling roller and Chrom side B)
+was deleted in 0.2.0: the modules, hooks 264 and 265 (`kill_kind`,
+`detach_kind`) and the ACMD hooks 0x11a and 0x11b (`EFFECT_OFF_KIND`,
+`EFFECT_DETACH_KIND`) are gone, and ARCropolis is not needed. Reduced is
+exactly the per-move variant from `src/moves.rs`; Inkling has no Reduced
+variant. The code survives only on the branch
+`archive/0.1.x-appearance-variants`.
 
 The roller runtime check (Deluxe `24e714e7`) exposed an Off-table alias gap:
 the peer names `inkling_roller`, while the game requests
