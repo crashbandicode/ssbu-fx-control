@@ -131,7 +131,7 @@ Event codes keep their Online Deluxe numbers:
 | 84 / 85 / 86 / 87 | Reduced cull / keep / restore (scope blocked) / preserve (name on another move) |
 | 91 to 95 | Retired 0.1.x sibling codes, not in the code (numbers reserved) |
 | 96 / 97 | Special Zoom probe request / marker latched |
-| 99 | Menu registration (`a` handle or negative error, `-100` no host; `b` descriptor version) |
+| 99 | Menu registration (`a` handle or negative error, `-100` no host; `b` 4, the descriptor version SDK 5 sends, or 0 on failure) |
 | 110 | `TRACE_EFFECTS`: first request of a (name, actor) pair (`a` Hash40; `b` bits 0–7 category, 8–23 kind, 24–39 status, 40–55 ordinal). At startup `a` = 0, `b` = 1 when the marker was latched |
 
 Hook ids: 256 to 263 are the eight EffectModule request and screen hooks;

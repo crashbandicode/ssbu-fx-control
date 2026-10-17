@@ -4,10 +4,7 @@
 //! the lock-free mode table.
 use super::{logging, online, record, Code, TABLE};
 use crate::menu;
-use deluxe_plugin_sdk::{
-    negotiated_descriptor_version, register as sdk_register, PluginHandler, RegisterError,
-    RequestStatus,
-};
+use deluxe_plugin_sdk::{register as sdk_register, PluginHandler, RegisterError, RequestStatus};
 
 struct Handler;
 
@@ -33,10 +30,8 @@ impl PluginHandler for Handler {
 pub(super) fn register() {
     let result = sdk_register(&menu::SPEC, Handler);
     let (a, b) = match result {
-        Ok(handle) => (
-            handle.0 as i64 as u64,
-            u64::from(negotiated_descriptor_version(handle).unwrap_or(0)),
-        ),
+        // SDK 5 sends descriptor version 4 only; `b` is that version on success.
+        Ok(handle) => (handle.0 as i64 as u64, 4),
         Err(RegisterError::HostMissing) => (-100i64 as u64, 0),
         Err(RegisterError::HostIncompatible) => (-101i64 as u64, 0),
         Err(RegisterError::Null) => (-1i64 as u64, 0),

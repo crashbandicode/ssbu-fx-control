@@ -343,10 +343,13 @@ mod tests {
             "scope, all, 10 ledger fighters, 9 headers + 12 variant rows"
         );
         assert!(SPEC.own_page);
-        assert!(OPTIONS.iter().any(OptionSpec::needs_version_4));
-        // Only the headers need version 4 now; every other row is a value row.
+        // Headers title each fighter; every other row is a plain value row.
         for spec in OPTIONS.iter() {
-            assert_ne!(spec.layout, RowLayout::Inline, "{}", spec.id);
+            assert!(
+                matches!(spec.layout, RowLayout::Header | RowLayout::Value),
+                "{}",
+                spec.id
+            );
         }
     }
 
