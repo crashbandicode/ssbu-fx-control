@@ -1,6 +1,6 @@
 [package]
 name = "ssbu-fx-control"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 publish = false
 build = "build.rs"
@@ -18,9 +18,9 @@ default = []
 [dependencies]
 # Online Deluxe plugin SDK: menu rows on Deluxe's window and its online context.
 # Resolved at runtime; this NRO also runs without Deluxe installed.
-# Pinned to the Deluxe reduction candidate: SDK 5.0.0 (descriptor version 4 only, no retry chain),
-# host accepts versions 2 to 4.
-deluxe-plugin-sdk = { git = "https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite", rev = "ecb99238f02bc1ecc18666cc65e5d9fb981d3f57" }
+# Pinned to Deluxe 0.5.4 (a63bc8c): SDK 5.0.0 (descriptor version 4 only, no retry chain),
+# host accepts versions 2 to 4, so the page needs Deluxe 0.5.3 or later.
+deluxe-plugin-sdk = { git = "https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite", rev = "a63bc8c" }
 
 [target.'cfg(target_os = "switch")'.dependencies]
 skyline = "=0.6.0"

@@ -5,12 +5,12 @@ version = 4
 [[package]]
 name = "deluxe-plugin-abi"
 version = "5.0.0"
-source = "git+https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite?rev=ecb99238f02bc1ecc18666cc65e5d9fb981d3f57#ecb99238f02bc1ecc18666cc65e5d9fb981d3f57"
+source = "git+https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite?rev=a63bc8c#a63bc8c217a2e2acb5416cd3dd83164a9647ce59"
 
 [[package]]
 name = "deluxe-plugin-sdk"
 version = "5.0.0"
-source = "git+https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite?rev=ecb99238f02bc1ecc18666cc65e5d9fb981d3f57#ecb99238f02bc1ecc18666cc65e5d9fb981d3f57"
+source = "git+https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite?rev=a63bc8c#a63bc8c217a2e2acb5416cd3dd83164a9647ce59"
 dependencies = [
  "deluxe-plugin-abi",
  "skyline",
@@ -80,7 +80,7 @@ dependencies = [
 
 [[package]]
 name = "ssbu-fx-control"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "deluxe-plugin-sdk",
  "skyline",

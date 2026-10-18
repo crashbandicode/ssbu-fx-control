@@ -22,7 +22,11 @@ Changes are visual request-path only. Gameplay articles, hitboxes, camera,
 hitstop, RNG and simulation are never touched. Effects already on screen
 finish normally; new requests follow the setting.
 
-## Status: 0.2.0 (unreleased), measurement first
+## Status: 0.2.1, measurement first
+
+0.2.1 is the 0.2.0 code with the plugin SDK pinned to Deluxe 0.5.4 (`a63bc8c`)
+and the documentation brought in line with the code. It registers with
+descriptor version 4, so the page needs Deluxe 0.5.3 or later.
 
 The 0.1.x line (branch `archive/0.1.x-appearance-variants`, release 0.1.0)
 chose its Reduced variants by appearance; some measured slower than On. This
