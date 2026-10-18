@@ -1,11 +1,12 @@
 # Reduced FX performance acceptance
 
-This method was written for Online Deluxe's FX row and carries over to the
-per-fighter rows unchanged: set the row of the fighter under test (or All) and
-keep every other condition fixed. ssbu-fx-control has no timing capture of its
-own; the frame-time traces below come from Online Deluxe's `CAPTURE_TIMING`
-installed alongside it (leave Deluxe's own FX row On), or from another
-recorded frame-time source.
+This method was written for Online Deluxe's FX row. For the per-fighter rows,
+acceptance is the rule in [HARNESS](HARNESS.md): console only, LLUltra, no
+one-second window below 59 fps; Eden never accepts. Set the row of the fighter
+under test (or All) and keep every other condition fixed. ssbu-fx-control has
+no timing capture of its own; the frame-time traces below come from Online
+Deluxe's `CAPTURE_TIMING` installed alongside it, or from another recorded
+frame-time source.
 
 The target is to approach **Off mode's frame-time stability under LessLag and
 LLUltra**, while keeping a recognizable cue. Looking less busy is not sufficient.
@@ -112,8 +113,8 @@ remaining severe spikes; review both tail intervals and the move visually.
   enough of the expensive body to recognize the move, but reduce its particles,
   lifetime, shader/overdraw work or other demonstrated cost further.
 - **Reduced approaches Off across repeated matched trials while preserving the
-  cue:** accept for the measured emulator configuration, then verify the same
-  move on the first-generation Switch.
+  cue:** a candidate for the console rule in [HARNESS](HARNESS.md), which alone
+  accepts a variant; an emulator result never does.
 
 If emulator settings are changed to reproduce a dip, retain both the normal
 setting result and the reproduction settings. Prefer accurate rendering and

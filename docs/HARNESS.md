@@ -38,7 +38,8 @@ the frames short of 60 for each.
 Why the console and not the emulator: the Switch's LLUltra budget is CPU
 update plus GPU time inside one vblank, and a move's cost there is what the
 rule is about. Eden under a CPU quota ranks candidates cheaply (the 0.1.x
-120 % quota column) but never accepts one.
+120 % quota table in [FX_EMULATOR_RESULTS](FX_EMULATOR_RESULTS.md)) but never
+accepts one.
 
 ## Steps per move
 
@@ -60,7 +61,8 @@ rule is about. Eden under a CPU quota ranks candidates cheaply (the 0.1.x
    controlled fighter in Training). Where a candidate is close, bisect with `cull=` (below) before
    adding a new variant.
 4. **Record.** Ledger row per move and variant; `status` in `moves.rs`
-   follows the ledger; a VALIDATION-style entry in both repositories.
+   follows the ledger; a VALIDATION-style entry in the Deluxe repository
+   (`docs/VALIDATION.md`).
 5. **Media.** On / accepted-variant GIF pair for the README, taken in Eden.
 
 ## Harness switches
@@ -69,7 +71,7 @@ rule is about. Eden under a CPU quota ranks candidates cheaply (the 0.1.x
 | --- | --- | --- |
 | `variant.<move>=N` | `config.ini`, or the move's row on the Deluxe page | Selects the Reduced variant per move (0 = original). Written by the plugin only when not the default. |
 | `cull=<name>,<name>` | `config.ini` | Up to 16 extra request names (with a covered fighter's prefix) nulled while that fighter's row is Reduced and the scope allows. Bisection tool: null one more layer without editing the tables. Read at start; never rewritten. |
-| `TRACE_EFFECTS` | marker file in `sd:/ultimate/ssbu_fx_control/` | Latched at start. Every request hook records the first time it sees each (name, actor category, kind, status) as event code 110, up to 512 keys per boot. `tools/resolve_trace.py events.log` prints the names per actor kind (names from `reference/effect_names.txt`; regenerate with `tools/export_effect_names.py`, add script names by hand under `# manual`). |
+| `TRACE_EFFECTS` | marker file in `sd:/ultimate/ssbu_fx_control/` | Latched at start. Every EffectModule `req*` hook records the first time it sees each (name, actor category, kind, status) as event code 110, up to 512 keys per boot. `tools/resolve_trace.py events.log` prints the names per actor kind (names from `reference/effect_names.txt`; regenerate with `tools/export_effect_names.py`, add script names by hand under `# manual`). |
 
 The trace reads the actor's kind, motion and status for every request while
 the marker is present (uncovered fighters included), so keep it absent from

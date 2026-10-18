@@ -3,13 +3,18 @@
 The sibling-based rows (Palutena up-air, Sephiroth side-B, Inkling roller,
 Chrom side-B) and the Kazuya, Ike, Chrom, Roy and Ganondorf rows describe code
 that was removed in 0.2.0 (it survives only on the branch
-`archive/0.1.x-appearance-variants`) and do not apply to 0.2.0.
+`archive/0.1.x-appearance-variants`). The rows for Palutena's other targeted
+moves, Sephiroth's other targeted moves, Inkling smashes and the Pyra sword
+tilt describe cull sets with no entry in `src/moves.rs`; Reduced classifies
+only through `moves::layer`, so it does not apply them. None of these rows
+apply to 0.2.0.
 
 Every row below was observed with an **Online Deluxe** build (NRO prefixes
 `833c`, `24e`, `7c`, `b99`, `c0`) and its single global FX row, before the
 feature moved into this plugin. ssbu-fx-control runs the same request
-pipeline and tables per fighter; none of these checks has been repeated with
-a ssbu-fx-control NRO yet.
+pipeline and Off tables per fighter; the Reduced keep/cull tables behind these
+rows were replaced in 0.2.0 by the per-move variants of `src/moves.rs`. None of
+these checks has been repeated with a ssbu-fx-control NRO yet.
 
 Implementation coverage and runtime acceptance are separate. Reduced changes
 specific visual layers, not every move a character can perform. All performance

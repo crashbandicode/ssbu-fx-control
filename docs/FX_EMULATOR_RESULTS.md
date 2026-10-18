@@ -1,9 +1,10 @@
 # Reduced FX emulator measurements
 
-Carried over from Online Deluxe. Every artifact below is an **Online Deluxe**
-NRO with the FX feature built in and one global FX row; the request policy is
-the one ssbu-fx-control ports, but no measurement here used a ssbu-fx-control
-build. Archive paths refer to the operator's machine.
+Carried over from Online Deluxe. Every artifact below, except the 2026-10-15
+quota section, is an **Online Deluxe** NRO with the FX feature built in and one
+global FX row; the request policy is the one ssbu-fx-control ports, but no
+measurement outside the quota section used a ssbu-fx-control build. Archive
+paths refer to the operator's machine.
 
 ## Explosive Flame at normal resolution — 2026-10-08
 
@@ -331,12 +332,9 @@ scene transition, outside every capture window. 27 of 27 rows complete.
 | `inkling-smashes` | 135 / 32 | 112 / 31 | 112 / 30 | candidate cc7f07f6 |
 | `ganondorf-moves` | 64 / 29 | 55 / 30 | 41 / 30 | candidate cc7f07f6 |
 
-† a mode needed one retry after a capture-gap warning; the retained capture is
-the clean one.
-
 **Reading.** Off had fewer slow intervals than On in 25 of 27 rows and
-more in 2; Reduced usually sits between the two but not always (Roy's and
-Mythra's Reduced windows were the slowest of their rows). The longest
+more in 2; Reduced usually sits between the two but not always (Roy's
+Reduced window was the slowest of its row). The longest
 intervals separate more clearly: 5 On windows contain a spike of
 60 ms or more (Captain Falcon 176 ms, Pyra 118 ms, Gigaflare 97 ms, Explosive
 Flame 82 ms, Ness 65 ms) while no Off window exceeds 36 ms. These are single

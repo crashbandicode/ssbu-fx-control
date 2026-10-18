@@ -36,7 +36,7 @@ move and only LLUltra drops, so every pass runs on LLUltra.
 | Move | Fighter row | Variants (lightest first) | Source |
 | --- | --- | --- | --- |
 | Falcon Punch | Captain Falcon | 1 wings off (0.1.x) · 2 wings, hold and flash off | fighter + weapon SpecialN |
-| Blazing End | Pyra | 1 trails and illusion off · 2 + sword flame · 3 everything but throw and return | SpecialS/AirS/Flick/Catch, esword Fly/Rotate/Back/Hit |
+| Blazing End | Pyra | 1 trails and illusion off · 2 + sword flame · 3 everything but sword open, throw and return | SpecialS/AirS/Flick/Catch, esword Fly/Rotate/Back/Hit |
 | Flame Nova | Pyra | 1 hold aura and trail · 2 + hold sword, ring1 · 3 only sword and explosions | SpecialNStart/Hold/N1/N4 (N2, N3 pending) |
 | Prominence Revolt | Pyra | 1 fire2, trail end, smoke, pillar ground · 2 + every sword fire and the pillar impact | SpecialHiStart/Hi, firepillar SpecialHi |
 | Specials | Mythra | 1 sword light layers (0.1.x; specials not extracted) | 0.1.x |
@@ -81,11 +81,12 @@ Reduced: both would filter the same requests.
 
 ## The Deluxe page
 
-With Online Deluxe 0.5.0 or later, the plugin registers an own page titled
-**FX Control** in Deluxe's window cycle (L+R or ZL+ZR, then D-pad Down):
+With Online Deluxe 0.5.3 or later, the plugin registers an own page titled
+**FX Control** in Deluxe's window cycle (L+R, then D-pad Down):
 settings, plugins, **FX Control**, performance, hidden. Up/Down selects a row,
-Left/Right changes it. In a match the page becomes Deluxe's compact strip.
-Deluxe 0.5.3 has an INI key `hide_pages=plugins,own_pages,performance` and
+Left/Right changes it (with ZR held while a fight is live). In a match the
+page becomes Deluxe's compact strip.
+Deluxe 0.5.3 has an INI key `hide_pages=plugins,performance` and
 Settings rows that take pages out of this cycle, so it can also run settings,
 FX Control, hidden.
 
@@ -93,13 +94,11 @@ The page has 33 rows:
 
 | Row | Choices | Notes |
 | --- | --- | --- |
-| Scope | Online / All | Online: online play outside Training. With a Deluxe older than 0.5.0 there is no online signal: the row reads `Unavailable` and Online never applies (effects stay original until `scope=all` is set in the INI). |
+| Scope | Online / All | Online: online play outside Training. Deluxe 0.5.0 to 0.5.2 gives the online signal but refuses the page, so the INI alone sets the scope. With a Deluxe older than 0.5.0 there is no online signal either: Online never applies (effects stay original until `scope=all` is set in the INI). |
 | All | On / Off / Reduced | Sets the ten fighter rows. Shows `Unavailable` while the rows differ. |
 | Captain Falcon, Ness, Lucas, Palutena, Sephiroth, Pyra, Mythra, Byleth, Inkling, Kirby | On / Off / Reduced | One row per fighter with a move on the ledger (`src/moves.rs`), in this order. On is green, Reduced yellow. Inkling offers On / Off only (the roller has no variant). Kazuya, Ike, Chrom, Roy and Ganondorf are not covered: no row, requests pass through untouched. |
 | Group headers | — | One header per fighter with variants; not selectable, Up/Down skip it. |
-| Falcon Punch, Blazing End, … Gigaflare | `Original`, `Variant 1` .. `Variant N` | One value row per move under its fighter's header, showing the selected variant (the `variant.<move>` value); Left/Right change it in place. It takes effect at once while the fighter's row is Reduced; Original leaves that move untouched. Needs Deluxe 0.5.3 (plugin API v4). |
-
-![FX Control page](docs/media/fx-control-page.png)
+| Falcon Punch, PK Thunder, PK Fire, … Hammer | `Original`, `Variant 1` .. `Variant N` | One value row per move under its fighter's header, showing the selected variant (the `variant.<move>` value); Left/Right change it in place. It takes effect at once while the fighter's row is Reduced; Original leaves that move untouched. Needs Deluxe 0.5.3 (plugin API v4). |
 
 ## Documents
 
@@ -110,7 +109,8 @@ The page has 33 rows:
   markers, diagnostics and event codes.
 - [Performance method](docs/FX_PERFORMANCE_METHOD.md) and the
   [emulator results](docs/FX_EMULATOR_RESULTS.md) and
-  [runtime matrix](docs/FX_RUNTIME_MATRIX.md) of the 0.1.x line.
+  [runtime matrix](docs/FX_RUNTIME_MATRIX.md): records of Online Deluxe
+  builds, except the results' quota section, which ran FX Control 0.1.0.
 - [Provenance](reference/README.md).
 
 ## Build

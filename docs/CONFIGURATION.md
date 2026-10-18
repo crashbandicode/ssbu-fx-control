@@ -32,7 +32,7 @@ cull=eflame_sword_open       # harness: extra names nulled while that fighter is
 - Unknown keys, comments and lines that do not parse are ignored on load and
   kept when the plugin rewrites the file. A bad value keeps that row's default.
 - Fighter lines exist only for the ten fighters that have a move on the ledger
-  and a row on the Deluxe page (`fighters::PAGE`). A line for another fighter
+  and a row on the Deluxe page (`fighters::ALL`). A line for another fighter
   (for example `kazuya=off` from an older file) is ignored on load and kept
   verbatim on rewrite. Kazuya, Ike, Chrom, Roy and Ganondorf are removed from
   the code (no Off tables, no move profiles, no name prefixes); their lines
@@ -62,7 +62,7 @@ rows under test.
 
 ### Who writes the file
 
-With Online Deluxe 0.5.0 or later, a single-row edit on the FX Control page is
+With Online Deluxe 0.5.3 or later, a single-row edit on the FX Control page is
 written by Deluxe's host persistence (`config_path`, one `key=value` line, on
 Deluxe's background thread). Editing **All** changes every row, which the host
 cannot express, so the plugin's own background thread rewrites the whole file
@@ -79,9 +79,9 @@ comes from depends on what else is installed:
 
 | Installed | Online signal | Scope row |
 | --- | --- | --- |
-| Online Deluxe 0.5.0 or later | Deluxe's `ssbu_online_deluxe_online_context_v1` export: its `ONLINE` bit, and `is_training_mode()` false | Online / All |
+| Online Deluxe 0.5.0 or later | Deluxe's `ssbu_online_deluxe_online_context_v1` export: its `ONLINE` bit, and `is_training_mode()` false | Online / All (the page, and so the row, exists on 0.5.3 or later; 0.5.0 to 0.5.2 refuse the registration) |
 | No Deluxe, no legacy SsbuSync host | The plugin's own mark-only hooks: the online-latency setup (`0x16ccab8`) marks a match online; every stage load (`0x25d9288`) clears the mark | (no Deluxe window) |
-| Deluxe older than 0.5.0, or a legacy SsbuSync host | None. The plugin does not hook the latency site the host already hooks. **Scope Online never applies**: effects stay original until `scope=all` is set in the INI. | `Unavailable` (would be; an old Deluxe refuses the registration) |
+| Deluxe older than 0.5.0, or a legacy SsbuSync host | None. The plugin does not hook the latency site the host already hooks. **Scope Online never applies**: effects stay original until `scope=all` is set in the INI. | (no page: an old Deluxe refuses the registration) |
 | No host, but the own hooks were refused (unexpected instruction words) | None. Scope Online never applies (Deluxe's conservative choice). Scope All still works. | (no Deluxe window) |
 
 Without Deluxe, the latency hook fires about three seconds after an online
@@ -99,7 +99,7 @@ The plugin needs nothing from Deluxe beyond the plugin-API table and
 | --- | --- |
 | `DISABLE` | Skips every hook and the menu registration. The INI is still loaded and the logs still written. |
 | `PROBE_CRITICAL_SCREEN` | Diagnostic only, latched at startup: while **every** fighter row is Off and the scope allows, the eighteen exact `bg_criticalhit` / `sys_bg_criticalhit` Special Zoom background names are suppressed. Keep it absent from normal installs. |
-| `TRACE_EFFECTS` | Harness only, latched at startup: every request hook records the first request of each (name, actor category, kind, status) as event code 110, up to 512 per boot. Decode with `tools/resolve_trace.py`. Reads the actor's context for every request; keep it absent from measurement captures and normal installs. |
+| `TRACE_EFFECTS` | Harness only, latched at startup: every EffectModule `req*` hook records the first request of each (name, actor category, kind, status) as event code 110, up to 512 per boot. Decode with `tools/resolve_trace.py`. Reads the actor's context for every request; keep it absent from measurement captures and normal installs. |
 
 ## Diagnostics
 
