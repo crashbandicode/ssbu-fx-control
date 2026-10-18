@@ -256,7 +256,7 @@ pub const MOVES: &[Move] = &[
                     "eflame_blazeend_sword",
                     "eflame_sword_close",
                 ],
-                "every Blazing End layer off except the throw burst and the return",
+                "every Blazing End layer off except the sword open, the throw burst and the return",
             ),
         ],
         source: "lua2cpp_eflame/eflame/SpecialS.txt SpecialAirS.txt SpecialSFlick.txt SpecialAirSFlick.txt SpecialSCatch.txt SpecialAirSCatch.txt; eflame_esword/FlyL.txt Rotate.txt Back.txt Hit.txt (Hop, Reflected, FlyFlick not read)",

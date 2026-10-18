@@ -1,4 +1,5 @@
-//! Menu rows on the Online Deluxe window, when Deluxe 0.5.0 or later is loaded.
+//! Menu rows on the Online Deluxe window, when Deluxe 0.5.3 or later is loaded
+//! (SDK 5.0.0 registers with descriptor version 4 only; older hosts refuse it).
 //!
 //! Callbacks run on Deluxe's overlay draw thread: they only read and write
 //! the lock-free mode table.
