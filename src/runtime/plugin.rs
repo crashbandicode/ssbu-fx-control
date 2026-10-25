@@ -9,6 +9,22 @@ use deluxe_plugin_sdk::{register as sdk_register, PluginHandler, RegisterError, 
 
 struct Handler;
 
+struct StageHandler;
+
+impl PluginHandler for StageHandler {
+    fn current(&self, option: usize) -> Option<usize> {
+        crate::stage_menu::current(&TABLE, option, super::stages::available())
+    }
+
+    fn request(&self, option: usize, choice: usize) -> RequestStatus {
+        let status = crate::stage_menu::request(&TABLE, option, choice, super::stages::available());
+        if status == RequestStatus::Applied {
+            record(Code::StageMenuChanged, option as u64, choice as u64);
+        }
+        status
+    }
+}
+
 impl PluginHandler for Handler {
     fn current(&self, option: usize) -> Option<usize> {
         menu::current(&TABLE, option, online::source().scope_row_available())
@@ -30,6 +46,16 @@ impl PluginHandler for Handler {
 
 pub(super) fn register() {
     let result = sdk_register(&menu::SPEC, Handler);
+    note_registration(Code::PluginRegistered, "FX Control", result);
+    let result = sdk_register(&crate::stage_menu::SPEC, StageHandler);
+    note_registration(Code::StagesRegistered, "Stages", result);
+}
+
+fn note_registration(
+    code: Code,
+    label: &str,
+    result: Result<deluxe_plugin_sdk::Handle, RegisterError>,
+) {
     let (a, b) = match result {
         // SDK 5 sends descriptor version 4 only; `b` is that version on success.
         Ok(handle) => (handle.0 as i64 as u64, 4),
@@ -43,7 +69,7 @@ pub(super) fn register() {
         Err(RegisterError::Callbacks) => (-6i64 as u64, 0),
         Err(RegisterError::Unknown(code)) => (code as i64 as u64, 0),
     };
-    record(Code::PluginRegistered, a, b);
-    logging::install_checkpoint(Code::PluginRegistered, a, b);
-    skyline::println!("[ssbu-fx-control] menu registration: {result:?} (descriptor {b})");
+    record(code, a, b);
+    logging::install_checkpoint(code, a, b);
+    skyline::println!("[ssbu-fx-control] {label} menu registration: {result:?} (descriptor {b})");
 }

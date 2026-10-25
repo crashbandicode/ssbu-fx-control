@@ -24,6 +24,13 @@ finish normally; new requests follow the setting.
 
 ## Status: 0.2.1, measurement first
 
+**Unreleased stage candidate:** a second **Stages** page lists Elite Legal
+Stages' eleven stages, each with On/Off controls: 47 particle handles across five
+stages and 22 scenery model groups across the other six. Default On; independent
+of fighter All and Scope; reload the stage after edits. See [stage coverage and static
+evidence](docs/STAGES.md) and the [complete Off-target review inventory](docs/STAGE_TARGETS.md).
+Runtime visuals and stock-clock FPS remain unverified.
+
 0.2.1 is the 0.2.0 code with the plugin SDK pinned to Deluxe 0.5.4 (`a63bc8c`)
 and the documentation brought in line with the code. It registers with
 descriptor version 4, so the page needs Deluxe 0.5.3 or later.
@@ -109,6 +116,8 @@ The page has 33 rows:
 - [Measurement harness](docs/HARNESS.md): the acceptance rule, the steps per
   move, `variant.*`, `cull=` and the `TRACE_EFFECTS` trace.
 - [Character effects](docs/FX.md): who owns a request, coverage, the hooks.
+- [Stage backgrounds](docs/STAGES.md): separate page, exact scope, provenance
+  and pending runtime/FPS validation.
 - [Configuration](docs/CONFIGURATION.md): INI, scope and online detection,
   markers, diagnostics and event codes.
 - [Performance method](docs/FX_PERFORMANCE_METHOD.md) and the

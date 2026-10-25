@@ -19,6 +19,8 @@ inkling=on
 kirby=on
 variant.kirby_hammer=2       # Reduced variant per move, 0 = original; default 1 is not written
 cull=eflame_sword_open       # harness: extra names nulled while that fighter is Reduced
+stages=on                  # separate stage All: on | off, targeted rows only
+stage.end=on               # per-stage override; exact keys in STAGES.md
 ```
 
 - The file is created with these defaults on first start
@@ -55,6 +57,12 @@ cull=eflame_sword_open       # harness: extra names nulled while that fighter is
   allows. A name without a known prefix is skipped. Read at start, kept
   verbatim on rewrite; the menu cannot change it.
 - Edits by hand take effect on the next game start.
+- `stages=on|off` is applied before `stage.<key>=on|off` in any line order.
+  These apply offline and online, independently of fighter All/Reduced/Scope.
+  All eleven legal stages default On and offer On/Off for selected scenery or
+  particles. No stage Reduced mode. Reload the stage after a menu edit.
+  A rejected hook disables its dependent rows and the bulk All control.
+  See [STAGES.md](STAGES.md) for exact coverage and unverified runtime status.
 
 [`config/eden-test.ini`](../config/eden-test.ini) is the offline test override
 (`scope=all`, every row On): copy it while the emulator is closed and set the
@@ -70,6 +78,9 @@ after any change once the table has been quiet for two seconds. The delay
 keeps the two writers from overlapping; the plugin's write always contains the
 complete state. Both writers replace the file atomically (temporary file, then
 rename) and keep the previous version as `config.previous.ini`.
+
+The **Stages** page instead sets every row `no_persist` with no host config path.
+Its edits are saved exclusively by the plugin's existing quiet-period saver.
 
 ## Scope and online detection
 
@@ -88,7 +99,8 @@ Without Deluxe, the latency hook fires about three seconds after an online
 Singles/Doubles stage loads (Deluxe's recorded console matches: 3.1 to 3.3 s),
 so the first seconds of each online match run with full effects. Clearing the
 mark at every stage load means an offline match after an online one is
-offline again. Neither hook writes game memory; the stage id is not read.
+offline again. Neither online-tracking hook writes game memory or reads the
+stage ID. The separate stage-background filter queries the guarded stage API.
 
 The plugin needs nothing from Deluxe beyond the plugin-API table and
 `ssbu_online_deluxe_online_context_v1`.
@@ -133,10 +145,15 @@ Event codes keep their Online Deluxe numbers:
 | 96 / 97 | Special Zoom probe request / marker latched |
 | 99 | Menu registration (`a` handle or negative error, `-100` no host; `b` 4, the descriptor version SDK 5 sends, or 0 on failure) |
 | 110 | `TRACE_EFFECTS`: first request of a (name, actor) pair (`a` Hash40; `b` bits 0–7 category, 8–23 kind, 24–39 status, 40–55 ordinal). At startup `a` = 0, `b` = 1 when the marker was latched |
+| 111 | Stages page registration, same result encoding as99 |
+| 112 | Stage background substituted `null`: `a` original hash, `b` high32 stage ID / low32 sampled count (first16, then every128) |
+| 113 | Stages menu edit: `a` option index, `b` choice |
+| 114 | `TRACE_EFFECTS`: first qualifying (background name, stage) request, whether On or Off; `a` hash, `b` high32 stage ID / low32 ordinal. Shares the existing512-key trace bound. `resolve_trace.py` reports category254 / stage ID |
 
 Hook ids: 256 to 263 are the eight EffectModule request and screen hooks;
 `0x110` to `0x119` the ten ACMD effect commands; `0x16ccab8` and `0x25d9288`
 the own online hooks (installed only when no Deluxe host provides the online
 signal). The 0.1.x `kill_kind` / `detach_kind` hooks (264, 265) and the ACMD
 `EFFECT_OFF_KIND` / `EFFECT_DETACH_KIND` hooks (`0x11a`, `0x11b`) are not
-installed.
+installed. The unreleased stage filter uses guarded offset`0x3563430` and the
+three exact stage-caller return addresses listed in[STAGES.md](STAGES.md).

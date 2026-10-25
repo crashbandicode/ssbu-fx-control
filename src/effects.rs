@@ -211,7 +211,10 @@ mod tests {
     }
     #[test]
     fn off_is_scoped_and_does_not_erase_general_feedback() {
-        assert_eq!(rewrite(FxMode::Off, hash40("captain_fp_flash")), NULL_EFFECT);
+        assert_eq!(
+            rewrite(FxMode::Off, hash40("captain_fp_flash")),
+            NULL_EFFECT
+        );
         for name in [
             "sys_hit_normal",
             "sys_shield",

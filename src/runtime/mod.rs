@@ -10,6 +10,7 @@ mod logging;
 mod memory;
 mod online;
 mod plugin;
+mod stages;
 
 use crate::{
     diagnostics::{Code, Recorder},
@@ -18,7 +19,7 @@ use crate::{
 
 pub(super) static RECORDER: Recorder = Recorder::new();
 pub(super) static TABLE: ModeTable = ModeTable::new();
-/// `TRACE_EFFECTS` harness trace (code 110), latched at install.
+/// `TRACE_EFFECTS` harness trace (codes 110/114/116), latched at install.
 pub(super) static TRACE: crate::trace::Trace = crate::trace::Trace::new();
 pub(super) const DATA_DIR: &str = "sd:/ultimate/ssbu_fx_control";
 /// Marker file under [`DATA_DIR`] that skips every hook.
@@ -77,6 +78,7 @@ pub fn main() {
         logging::startup_phase("hooks_begin");
         effects::install();
         online::install(source);
+        stages::install();
         logging::startup_phase("hooks_complete");
         // Rows only when the hooks behind them exist.
         plugin::register();

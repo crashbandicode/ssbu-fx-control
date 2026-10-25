@@ -53,6 +53,20 @@ pub(super) fn startup_phase(phase: &str) {
 }
 
 /// Synchronous only during installation, never in a frame or effect callback.
+pub(super) fn note_install(lines: &[String]) {
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(Path::new(DATA_DIR).join("install.log"))
+    {
+        for line in lines {
+            let _ = writeln!(file, "{line}");
+        }
+        let _ = file.sync_all();
+    }
+}
+
+/// Synchronous only during installation, never in a frame or effect callback.
 pub(super) fn install_checkpoint(code: Code, address: u64, detail: u64) {
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
@@ -61,6 +75,19 @@ pub(super) fn install_checkpoint(code: Code, address: u64, detail: u64) {
     {
         let _ = writeln!(file, "{} 0x{address:x} 0x{detail:x}", code as u16);
         let _ = file.sync_all();
+    }
+}
+
+/// Changed nonzero model counters. A 5 s wake scans; later 500 ms wakes drain
+/// the remainder, 32 samples at a time, so one scan cannot fill the event ring.
+fn publish_stage_counts(iteration: u64) {
+    if !crate::stage_diag::DIAG.enabled() {
+        return;
+    }
+    let scan = iteration.is_multiple_of(10);
+    for sample in crate::stage_diag::DIAG.drain_model_counts(crate::stage_diag::PUBLISH_BATCH, scan)
+    {
+        record(Code::FxStageModelCount, sample.argument_a(), sample.count);
     }
 }
 
@@ -232,6 +259,7 @@ pub(super) fn start(version: &str, source: OnlineSource) {
                 if iteration.is_multiple_of(10) {
                     record(Code::Heartbeat, TABLE.generation(), iteration);
                 }
+                publish_stage_counts(iteration);
                 let now_ms = started.elapsed().as_millis() as u64;
                 let generation = TABLE.generation();
                 if saver.poll(generation, now_ms) {

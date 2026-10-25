@@ -77,6 +77,33 @@ pub enum Code {
     /// status and the ordinal (`trace::pack`). At startup `a` = 0 and `b` = 1
     /// records that the marker was latched.
     FxTrace = 110,
+    /// Stages page registration; same handle/error and descriptor fields as 99.
+    StagesRegistered = 111,
+    /// Background request replaced with null: a=Hash40, b=stage id <<32 | count.
+    FxStageSuppressed = 112,
+    /// Stages page edit: a=option index, b=choice. Separate from fighter page 8.
+    StageMenuChanged = 113,
+    /// TRACE_EFFECTS: first allowlisted background request per stage/name.
+    /// a=Hash40, b=stage id <<32 | ordinal. Not an FPS or complete coverage claim.
+    FxStageTrace = 114,
+    /// Scenery draw argument forced false; a=full folder Hash40, b=stage<<32|count.
+    /// Logical stage-object visibility remains native; only the render argument changes.
+    FxStageModelSuppressed = 115,
+    /// TRACE_EFFECTS: first targeted stage/group at the isolated renderer callsite.
+    /// a=full folder Hash40, b=stage id<<32|ordinal. Category0xfd internally (effects0xfe).
+    FxStageModelTrace = 116,
+    /// `TRACE_STAGE_DIAGNOSTICS` latched once during stage install. `a` is 1
+    /// when the marker file was present and 0 when it was absent. Independent
+    /// of code 110. Not read again until the next process start.
+    FxStageDiagnostics = 117,
+    /// Cumulative model-hook observations for one recognized stage.
+    /// `a` = `(stage_id << 32) | reason`, `b` = cumulative call count.
+    /// Not a frame, pass, or FPS count.
+    FxStageModelCount = 118,
+    /// First particle predicate observation before the name/caller/stage
+    /// conjunction. `a` is the Hash40. `b` = `(stage_i16 << 48) | (flags << 32) | caller_u32`.
+    /// Not every call: repeats, a full 512-key table, and a busy dedupe lock are omitted.
+    FxStageParticleObserve = 119,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -200,6 +227,16 @@ mod tests {
         assert_eq!(Code::FxReducedPreserve as u16, 87);
         assert_eq!(Code::FxCriticalRequest as u16, 96);
         assert_eq!(Code::CriticalProbe as u16, 97);
+    }
+
+    #[test]
+    fn stage_diagnostic_codes_stay_117_118_119() {
+        assert_eq!(Code::FxTrace as u16, 110);
+        assert_eq!(Code::FxStageTrace as u16, 114);
+        assert_eq!(Code::FxStageModelTrace as u16, 116);
+        assert_eq!(Code::FxStageDiagnostics as u16, 117);
+        assert_eq!(Code::FxStageModelCount as u16, 118);
+        assert_eq!(Code::FxStageParticleObserve as u16, 119);
     }
 
     #[test]
