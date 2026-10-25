@@ -1,142 +1,67 @@
-# Reduced FX performance acceptance
+# Reduced FX performance method
 
-This method was written for Online Deluxe's FX row. For the per-fighter rows,
-acceptance is the rule in [HARNESS](HARNESS.md): console only, LLUltra, no
-one-second window below 59 fps; Eden never accepts. Set the row of the fighter
-under test (or All) and keep every other condition fixed. ssbu-fx-control has
-no timing capture of its own; the frame-time traces below come from Online
-Deluxe's `CAPTURE_TIMING` installed alongside it, or from another recorded
-frame-time source.
+There is **one current acceptance protocol: [HARNESS](HARNESS.md).** This
+page summarizes the historical emulator method behind the 2026-10-08
+[emulator results](FX_EMULATOR_RESULTS.md) and how to read any frame-time
+trace. Full text: [measurement reference](MEASUREMENT_REFERENCE.md#historical-emulator-method).
 
-The target is to approach **Off mode's frame-time stability under LessLag and
-LLUltra**, while keeping a recognizable cue. Looking less busy is not sufficient.
-Removing a decoration is useful only if it removes enough of the expensive work.
+| Protocol | Metric and decision |
+| --- | --- |
+| Current [HARNESS](HARNESS.md) | Console render callbacks: no one-second window below 59. The only route to acceptance |
+| Historical Online Deluxe / Eden | Interval percentiles, excess time, retained benefit. Never accepts a variant |
+
+ssbu-fx-control has no timing capture; traces come from Online Deluxe's
+`CAPTURE_TIMING` or another recorded frame-time source.
 
 ## Matched comparisons
 
-For each move, record the exact NRO hash, game version, emulator build, CPU/GPU,
-driver, graphics settings, render profile, FX scope, stage, fighters and inputs.
-Use one emulator instance, 100% game speed, no FPS++ and no concurrent builds.
-Retain the same mods and settings across On, Off and Reduced.
-
-Warm the move and stage shaders before measuring. Save a Training state with
-fixed position, facing, damage and charge conditions. Reload the same state
-before each trial. Use the same recorded input, including the full hold for
-Gigaflare. Do not compare different charge levels. Close menus and collect
-screenshots outside timing windows when possible.
-
-Run counterbalanced On, Off and Reduced blocks for both LessLag and LLUltra,
-with at least five repetitions per condition when a spike can be reproduced.
-Retain before/during/after intervals, not just idle FPS. Confirm from diagnostic
-events that scope and profile were actually applied and that Reduced used its
-intended path. Preserve move timing, damage/hits, visibility and post-effect
-cleanup as separate checks.
+The historical target was Off's frame-time stability under LessLag and
+LLUltra with a recognizable cue. Trials fixed the binary, host, settings and
+mods; warmed shaders; reloaded one saved Training state; replayed the same
+input and charge; and ran counterbalanced On, Off and Reduced blocks, at
+least five per condition, confirming from diagnostics that the intended path
+ran. [Checklist](MEASUREMENT_REFERENCE.md#matched-comparisons).
 
 ## Critical-zoom reproduction
 
-The operator clarified that the spike may occur during Special Zoom
-(https://www.ssbwiki.com/Special_Zoom), rather than only the red final-stock
-finishing screen. Ordinary attack captures do not establish critical-zoom
-coverage. Verify an actual connecting move with its blue Special Zoom and keep
-the red finishing-hit screen as a separate fixture. Retain a screenshot outside
-the measured trials to identify which scene actually ran.
-
-Keep the same stage, positions, damage, move and charge in On, Off and Reduced
-under both LessLag and LLUltra. Keep intentional hitstop, camera timing and
-cinematic slow motion unchanged. Measure presentation cadence around the hit;
-a frozen animation during hitstop is not itself a dropped frame. Warm the
-critical-zoom shaders as well as the move shaders.
-
-The normal FX policy preserves critical-zoom backgrounds and bg_finishhit.
-Therefore normal Off is not a comparator that removes those backgrounds. If all
-three modes spike there, separate the move effects from the shared critical
-presentation before changing policy. No removal of camera logic, hitstop,
-gameplay state or simulation timing is implied by this measurement.
-
-A diagnostic-only startup marker, `PROBE_CRITICAL_SCREEN` (in
-`sd:/ultimate/ssbu_fx_control/`), allows the exact
-`bg_criticalhit` / `sys_bg_criticalhit` names and their eight color variants
-to be suppressed while every fighter row is Off (All = Off) and the scope
-allows it. These backgrounds belong to no fighter. It does not suppress the camera, hitstop,
-slow motion, red finishing backgrounds or unrelated screen effects. Keep it
-absent from user installations. Compare normal Off with diagnostic Off using
-the same binary and fresh emulator processes, then repeat the original
-condition to check drift. On and Reduced ignore this marker.
-
-Diagnostic event 97 records the latched marker state at startup. Event 96
-records the first 32 matched requests (this plugin has no finite capture
-session to extend that): argument A is the original Hash40; argument B uses bits 0–7 for
-request path (1: screen, 2: screen-system, 3: ordinary) and bit 8 for actual
-diagnostic suppression. A missing event or an unchanged screenshot does not
-prove that the effect was suppressed.
+Blue Special Zoom and the red finishing screen are separate fixtures. Normal
+Off keeps critical backgrounds, so the diagnostic-only
+`PROBE_CRITICAL_SCREEN` marker is the comparator.
+[Procedure and limits](MEASUREMENT_REFERENCE.md#critical-zoom-reproduction).
 
 ## What the measurements mean
 
-Online Deluxe's bounded CAPTURE_TIMING trace records CPU-side guest present calls
-at 19.2 MHz. Consecutive present-entry intervals can expose a game-side cadence
-spike. They are **not** GPU completion, host display presentation, scanout or
-physical input latency. The render-callback series is a separate observation
-and must not be mislabeled as present timing.
-
-Use actual per-frame intervals when available. Eden's smoothed status FPS can
-corroborate a sustained drop; 1000/FPS is an effective period, not a recovered
-individual-frame time series. A mean near60 does not prove that every frame
-met its deadline.
-
-For each condition report median, p95, p99 and worst interval, intervals over
-16.67/20/25/33.33 ms, the longest consecutive run of slow intervals, and total
-excess time above the frame budget during the move. Keep capture completeness,
-dropped-event counts and observation boundaries in the result. Review raw plots
-and repeated trials instead of treating one noisy maximum as decisive.
-
-When On has a repeatable effect-specific cost above Off, also report the fraction
-of that improvement retained by Reduced, using each matched block's excess time:
+- `CAPTURE_TIMING` present-entry intervals are CPU-side cadence, **not** GPU
+  completion, display, scanout or input latency. Render callbacks are a
+  separate series.
+- Use per-frame intervals. Smoothed FPS and a mean near 60 do not prove every
+  frame met its deadline.
+- Report median, p95, p99 and worst interval; counts over
+  16.67/20/25/33.33 ms; the longest slow run; excess time above budget; and
+  capture completeness.
+- When On has a repeatable cost over Off:
 
 ```text
 retained_benefit = (excess_On - excess_Reduced) / (excess_On - excess_Off)
 ```
 
-A value near 1 approaches Off; 0 retains none of Off's measured benefit.
-Do not clamp negative or above-1 results, and do not compute this ratio when the
-denominator is indistinguishable from run-to-run noise. Report the underlying
-times and variation alongside it. A good ratio does not excuse missing cues or
-remaining severe spikes; review both tail intervals and the move visually.
+Near 1 approaches Off. Do not clamp it, and do not compute it when the
+denominator is within noise. [Full rules](MEASUREMENT_REFERENCE.md#reading-frame-time-traces).
 
 ## Decision
 
-- **On has no reproducible spike:** performance unverified. Do not claim Reduced
-  fixes a Switch dip merely because the emulator stayed at60.
-- **Off has the same spike:** the target effect may not be the bottleneck, the
-  filter may not have reached the real request, or the measurement is dominated
-  by another cost. Resolve that before tuning Reduced.
-- **Off improves, Reduced does not:** Reduced fails the performance goal. Retain
-  enough of the expensive body to recognize the move, but reduce its particles,
-  lifetime, shader/overdraw work or other demonstrated cost further.
-- **Reduced approaches Off across repeated matched trials while preserving the
-  cue:** a candidate for the console rule in [HARNESS](HARNESS.md), which alone
-  accepts a variant; an emulator result never does.
+| Emulator observation | Meaning |
+| --- | --- |
+| On has no reproducible spike | Performance unverified |
+| Off has the same spike | The effect may not be the bottleneck; resolve before tuning |
+| Off improves, Reduced does not | Reduced fails; cut more of the costly body |
+| Reduced approaches Off, cue kept | Candidate for the console rule only |
 
-If emulator settings are changed to reproduce a dip, retain both the normal
-setting result and the reproduction settings. Prefer accurate rendering and
-a stage/scene that reproduces the actual move cost. Host contention, arbitrary
-slow motion and a generally sub60 baseline are not substitutes for reproducing
-the Switch effect-specific bottleneck.
-
-The Switch comparison remains required for a Switch-performance claim.
-No overclocking behavior is added.
-
-Recorded experiments and limitations: [emulator FX results](FX_EMULATOR_RESULTS.md).
+A Switch-performance claim needs the Switch.
+[Decision detail](MEASUREMENT_REFERENCE.md#decision).
 
 ## Capacity-limited diagnostic traces
 
-A trace ending with `reason=capacity` cannot support a full requested-duration
-claim. In the c0 Palutena follow-up, the complete ten-second callback trace
-provides the guest input anchor. An API slice is usable only when its actual
-ordered, gap-free coverage independently includes the entire baseline and move
-window plus a predeclared margin (B+3 seconds for the B..B+2.5-second window).
-Keep the original capacity reason and skipped-event counts. Do not relabel
-the file as elapsed or bypass the full-trace analyzer's rejection.
-
-Report such observations as bounded CPU-side API intervals. They do not
-measure GPU completion, displayed frames or input-to-photon latency. If the
-coverage check fails, exclude the trial and retain the failed receipt.
+A `reason=capacity` trace supports only slices whose gap-free coverage
+includes the whole baseline and move window plus a predeclared margin.
+[Rule](MEASUREMENT_REFERENCE.md#capacity-limited-diagnostic-traces).

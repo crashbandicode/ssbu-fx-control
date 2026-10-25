@@ -1,176 +1,122 @@
 # Configuration
 
-All files live in `sd:/ultimate/ssbu_fx_control/`.
+All files live in `sd:/ultimate/ssbu_fx_control/`: `config.ini`, optional
+[marker files](#markers) and [logs](#diagnostics). Every exact rule is in the
+[configuration reference](CONFIGURATION_REFERENCE.md).
+
+[config.ini](#config-ini) · [Keys](#keys) · [Examples](#examples) ·
+[Load rules](#load-rules) · [Who writes the file](#who-writes-the-file) ·
+[Scope and online detection](#scope-and-online-detection) ·
+[Markers](#markers) · [Diagnostics](#diagnostics)
 
 ## config.ini
 
-Example settings; the variant and cull lines illustrate optional overrides,
-not first-start defaults:
+First start writes the defaults from
+[`config/default.ini`](../config/default.ini): Scope Online, every fighter and
+stage On, variant 1 where a variant exists, and no cull list. Hand edits take
+effect on the next game start; an unreadable file is left untouched and the
+defaults are used for that run.
+
+For offline testing, copy [`config/eden-test.ini`](../config/eden-test.ini)
+(`scope=all`, every row On) while the emulator is closed, then set the rows
+under test.
+
+## Keys
+
+| Key | Values | Default |
+| --- | --- | --- |
+| `scope` | `online` / `all` | `online` |
+| `all` | `on` / `off` / `reduced` | `on` |
+| One per fighter, e.g. `kirby` | `on` / `off` / `reduced` | `on` |
+| `variant.<move>` | `0` to the move's variant count | `1` where a variant exists (not written) |
+| `cull` | Up to 16 comma-separated names | Empty |
+| `stages` | `on` / `off` | `on` |
+| `stage.<key>`, e.g. `stage.end` | `on` / `off` | `on` |
+
+All fighter, move and stage key names are in the
+[reference](CONFIGURATION_REFERENCE.md#keys). Moves and their variant counts
+come from the ledger in [`src/moves.rs`](../src/moves.rs).
+
+## Examples
+
+When applying a snippet, remove conflicting per-fighter or per-stage overrides.
+
+Fighter rows in offline matches and Training too, every fighter Reduced
+(Inkling, which has no variant, stays On):
 
 ```ini
-scope=online        # online | all
-all=on              # on | off | reduced
-captain_falcon=on   # one line per page fighter: on | off | reduced
-ness=on
-lucas=on
-palutena=on
-sephiroth=on
-pyra=on
-mythra=on
-byleth=on
-inkling=on
-kirby=on
-variant.kirby_hammer=2       # Reduced variant per move, 0 = original; default 1 is not written
-cull=eflame_sword_open       # harness: extra names nulled while that fighter is Reduced
-stages=on                    # stage All: on | off. Independent of fighter all= and scope=
-stage.end=on                 # one line per stage; all eleven keys are in config/default.ini
+scope=all
+all=reduced
 ```
 
-- First-start defaults are Scope Online, all fighters and stages On, variant 1
-  where a variant exists, and an empty cull list
-  ([`config/default.ini`](../config/default.ini)). An unreadable file is left
-  untouched and the defaults are used for that run.
-- **Load order:** `all=` is applied first, then every fighter line, whatever
-  the line order. A fighter line always wins over `all=`.
-- `all=` applies to the ten page fighters only. It is written only while
-  every page fighter has the same value; while the rows differ the plugin
-  removes the line rather than leave a wrong one.
-- Unknown keys, comments and lines that do not parse are ignored on load and
-  kept when the plugin rewrites the file. A bad value keeps that row's default.
-- Fighter lines exist only for the ten fighters that have a move on the ledger
-  and a row on the Deluxe page (`fighters::ALL`). A line for another fighter
-  (for example `kazuya=off` from an older file) is ignored on load and kept
-  verbatim on rewrite. Kazuya, Ike, Chrom, Roy and Ganondorf are removed from
-  the code (no Off tables, no move profiles, no name prefixes); their lines
-  (`kazuya=`, `ike=`, `chrom=`, `roy=`, `ganondorf=`) are unknown keys and
-  their effect requests pass through untouched.
-- `reduced` on a fighter without a Reduced variant is ignored (the row stays
-  On): that is Inkling, whose roller has no variant.
-- `variant.<move>=N`: the Reduced variant for one move of `src/moves.rs`
-  (`falcon_punch`, `pyra_side_b`, `pyra_neutral_b`, `pyra_up_b`,
-  `mythra_specials`, `palutena_explosive_flame`, `ness_pk_thunder`,
-  `ness_pk_fire`, `lucas_pk_thunder`, `kirby_hammer`, `byleth_specials`,
-  `inkling_roller`, `sephiroth_gigaflare`). 0 keeps that move original while
-  the row is Reduced; a number above the move's variant count keeps the
-  default (1). The plugin writes the line only when the value is not the
-  default. The same value is the move's row on the Deluxe page (Original /
-  Variant 1 .. N); a change there is saved to this line by the plugin's own
-  saver, like `all=`. See [HARNESS](HARNESS.md).
-- `cull=<name>,<name>`: up to 16 request names, each with a covered
-  fighter's prefix, nulled while that fighter's row is Reduced and the scope
-  allows. A name without a known prefix is skipped. Read at start, kept
-  verbatim on rewrite; the menu cannot change it.
-- Edits by hand take effect on the next game start.
-- `stages=on|off` is applied before every `stage.<key>=on|off`, whatever the
-  line order. A stage line wins over `stages=`. These keys apply offline and
-  online and ignore fighter All, Reduced, and Scope. All eleven stages
-  default On. A stage value of `reduced`, or any other unknown value, is
-  ignored. Reload the stage after a menu change. A rejected stage hook
-  disables its rows and **All backgrounds**. Keys and coverage are in
-  [STAGES](STAGES.md).
+Captain Falcon Reduced, but Falcon Punch left original:
 
-[`config/eden-test.ini`](../config/eden-test.ini) is the offline test override
-(`scope=all`, every row On): copy it while the emulator is closed and set the
-rows under test.
+```ini
+captain_falcon=reduced
+variant.falcon_punch=0
+```
 
-### Who writes the file
+Smashville's targeted scenery Off, every other stage On; this applies offline
+and online whatever `scope=` says:
 
-With Online Deluxe 0.5.3 or later, a single-row edit on the FX Control page is
-written by Deluxe's host persistence (`config_path`, one `key=value` line, on
-Deluxe's background thread). Editing **All** changes every row, which the host
-cannot express, so the plugin's own background thread rewrites the whole file
-after any change once the table has been quiet for two seconds. The delay
-coalesces edits; the plugin's write contains the complete state. Both writers
-replace the file atomically (temporary file, then
-rename) and keep the previous version as `config.previous.ini`.
+```ini
+stages=on
+stage.animal_village=off
+```
 
-The **Stages** page sets every row `no_persist` and registers no host config
-path. Its edits are saved only by the plugin's quiet-period saver, including
-`stages=` and each `stage.<key>=`. Fighter host persistence does not write
-those keys.
+## Load rules
+
+![Fighter rows are gated by Scope and set by all= then each fighter line; stage rows have no Scope gate and are set by stages= then each stage line. Deluxe host persistence writes one line for a Scope or single fighter row edit; the plugin saver writes the whole file, including all=, variant, stages= and stage lines.](media/config-two-groups.svg)
+
+- A fighter line always beats `all=`, and a stage line beats `stages=`,
+  whatever the line order.
+- Unknown keys, comments and bad lines are ignored on load and kept on
+  rewrite. A bad value keeps that row's default.
+- `reduced` on Inkling is ignored (the row stays On), and stage rows ignore
+  `reduced`.
+
+Details for `all=`, `variant.`, `cull=` and removed fighters:
+[load rules](CONFIGURATION_REFERENCE.md#load-rules).
+
+## Who writes the file
+
+With Online Deluxe 0.5.3 or later, Deluxe writes a single fighter-page edit as
+one line. The plugin also rewrites the whole file after any change, once the
+table has been quiet for two seconds; that is how **All**, variant and Stages
+edits are saved. Both keep the previous file as `config.previous.ini`.
+[Writers](CONFIGURATION_REFERENCE.md#writers)
 
 ## Scope and online detection
 
-`scope=all` applies the per-fighter modes everywhere. `scope=online` (default)
-applies them only in online play outside Training. Where the online signal
-comes from depends on what else is installed:
+`scope=all` applies fighter rows everywhere; `scope=online` (default) only in
+online play outside Training. Stage rows ignore Scope.
 
-| Installed | Online signal | Scope row |
-| --- | --- | --- |
-| Online Deluxe 0.5.0 or later | Deluxe's `ssbu_online_deluxe_online_context_v1` export: its `ONLINE` bit, and `is_training_mode()` false | Online / All (the page, and so the row, exists on 0.5.3 or later; 0.5.0 to 0.5.2 refuse the registration) |
-| No Deluxe, no legacy SsbuSync host | The plugin's own mark-only hooks: the online-latency setup (`0x16ccab8`) marks a match online; every stage load (`0x25d9288`) clears the mark | (no Deluxe window) |
-| Deluxe older than 0.5.0, or a legacy SsbuSync host | None. The plugin does not hook the latency site the host already hooks. **Scope Online never applies**: effects stay original until `scope=all` is set in the INI. | (no page: an old Deluxe refuses the registration) |
-| No host, but the own hooks were refused (unexpected instruction words) | None. Scope Online never applies (Deluxe's conservative choice). Scope All still works. | (no Deluxe window) |
+- **Deluxe 0.5.0 or later** supplies the online signal.
+- **No Deluxe** (and no legacy SsbuSync host): the plugin's own hooks mark a
+  match online about three seconds after its stage loads, so those first
+  seconds keep full fighter effects. If those hooks are refused, Scope
+  Online never applies.
+- **Deluxe older than 0.5.0, or a legacy SsbuSync host**: no signal, so Scope
+  Online never applies; use `scope=all`.
 
-Without Deluxe, the latency hook fires about three seconds after an online
-Singles/Doubles stage loads (Deluxe's recorded console matches: 3.1 to 3.3 s),
-so the first seconds of each online match run with full fighter effects.
-Clearing the mark at every stage load means an offline match after an online
-one is offline again. Neither online-tracking hook writes game memory or
-reads the stage id. The separate stage-background filter queries the guarded
-stage API and does not consult fighter Scope. That is why stage rows still
-apply when the online mark is late.
-
-The plugin needs nothing from Deluxe beyond the plugin-API table and
-`ssbu_online_deluxe_online_context_v1`.
+[Online detection](CONFIGURATION_REFERENCE.md#online-detection)
 
 ## Markers
 
-| File | Effect |
+Marker files in the same folder:
+
+| File | Use |
 | --- | --- |
-| `DISABLE` | Skips every hook and the menu registration. The INI is still loaded and the logs still written. |
-| `PROBE_CRITICAL_SCREEN` | Diagnostic only, latched at startup: while **every** fighter row is Off and the scope allows, the eighteen exact `bg_criticalhit` / `sys_bg_criticalhit` Special Zoom background names are suppressed. Keep it absent from normal installs. |
-| `TRACE_EFFECTS` | Harness only, latched at startup: every EffectModule `req*` hook records the first request of each (name, actor category, kind, status) as event code 110, up to 512 per boot. The same marker also records stage particle code 114 and scenery-group code 116. Decode with `tools/resolve_trace.py`. Reads the actor's context for every request; keep it absent from measurement captures and normal installs. |
-| `TRACE_STAGE_DIAGNOSTICS` | Stage harness only, latched once when the stage hooks install. Codes 117, 118 and 119. Independent of `TRACE_EFFECTS` and of stage On/Off. Absent until the next process start if created mid-session. See [HARNESS](HARNESS.md#stage-diagnostics). |
+| `DISABLE` | Skips every hook and the menu; the INI and logs still work |
+| `PROBE_CRITICAL_SCREEN` | Diagnostic only; keep absent |
+| `TRACE_EFFECTS` | Harness tracing; keep absent from captures and normal installs |
+| `TRACE_STAGE_DIAGNOSTICS` | Stage harness only |
+
+[Marker details](CONFIGURATION_REFERENCE.md#markers)
 
 ## Diagnostics
 
-- `install.log`: build id, startup phases, each hook's entry word and install
-  result (`<code> 0x<id> 0x<detail>` lines), the online source, the loaded
-  settings and the menu registration result. The previous run is kept as
-  `install.previous.log`.
-- `events.log`: a bounded 128-event ring flushed every 500 ms by the plugin's
-  background thread (`sequence tick code arg0 arg1`), rotated at 4 MiB.
-  Hooks never write files; a contended ring counts a drop instead of waiting.
-- `panic.log`: written once if the plugin panics.
-
-Event codes keep their Online Deluxe numbers:
-
-| Code | Meaning |
-| --- | --- |
-| 1 | Boot (`a` plugin text start, `b` game text base) |
-| 2 | Not Smash 13.0.5; hooks skipped |
-| 3 / 4 / 5 | Hook installing / installed / rejected (`a` id or offset) |
-| 6 | INI loaded (`a` online source, `b` common mode or `u64::MAX` when mixed) |
-| 8 | Menu edit applied (`a` option, `b` choice) |
-| 11 | Off substituted `null` (`a` hash, `b` sampled total) |
-| 15 | Heartbeat every 5 s (`a` table generation) |
-| 16 | Coexistence: 1 SsbuSync host, 2 DISABLE marker, 3 Deluxe without online export, 4 own online hooks refused |
-| 17 | Hook entry instruction word |
-| 24 | INI rewritten (`b` 1 ok, 0 error) |
-| 27 / 28 / 29 | ACMD effect seen / Off substituted / argument rejected |
-| 30 | Online source (`a` 1 Deluxe, 2 own hooks, 3 unavailable, 4 undetected); `b` 1 own mark set, 2 cleared by a stage load |
-| 84 / 85 / 86 / 87 | Reduced cull / keep / restore (scope blocked) / preserve (name on another move) |
-| 91 to 95 | Retired 0.1.x sibling codes, not in the code (numbers reserved) |
-| 96 / 97 | Special Zoom probe request / marker latched |
-| 99 | Menu registration (`a` handle or negative error, `-100` no host; `b` 4, the descriptor version SDK 5 sends, or 0 on failure) |
-| 110 | `TRACE_EFFECTS`: first request of a (name, actor) pair (`a` Hash40; `b` bits 0–7 category, 8–23 kind, 24–39 status, 40–55 ordinal). At startup `a` = 0, `b` = 1 when the marker was latched |
-| 111 | Stages page registration, same handle/error and descriptor fields as 99 |
-| 112 | Stage particle request replaced with `null` (`a` original hash; `b` stage id in the high 32 bits, sampled count in the low 32) |
-| 113 | Stages menu edit (`a` option index, `b` choice), separate from fighter code 8 |
-| 114 | `TRACE_EFFECTS`: first qualifying background name on a stage (`a` hash; `b` stage id in the high 32 bits, ordinal in the low 32) |
-| 115 | Scenery draw argument forced off (`a` full folder-path hash; `b` stage id and sampled count). Stage-object visibility stays native |
-| 116 | `TRACE_EFFECTS`: first targeted scenery group (`a` full folder-path hash; `b` stage id and ordinal) |
-| 117 | `TRACE_STAGE_DIAGNOSTICS` latched at stage install (`a` 1 present, 0 absent) |
-| 118 | Cumulative model-hook observations for one of the eleven stages (`a` stage id and reason; `b` call count). Not a frame or FPS count |
-| 119 | First particle predicate observation before the null decision (`a` hash; `b` stage, flags, and caller). Repeats and a full 512-key table are omitted |
-
-Hook ids: 256 to 263 are the eight EffectModule request and screen hooks;
-`0x110` to `0x119` the ten ACMD effect commands; `0x16ccab8` and `0x25d9288`
-the own online hooks (installed only when no Deluxe host provides the online
-signal). The 0.1.x `kill_kind` / `detach_kind` hooks (264, 265) and the ACMD
-`EFFECT_OFF_KIND` / `EFFECT_DETACH_KIND` hooks (`0x11a`, `0x11b`) are not
-installed. Stage visuals, 13.0.5 only, use the guarded effect request at
-`0x3563430` and the draw-record argument at `0x35d73e0`. Caller lists,
-preserved geometry, and the open acceptance limits are in
-[STAGES](STAGES.md).
+`install.log` records startup and each hook's result, `events.log` holds the
+event ring, and `panic.log` appears only after a panic.
+[Log formats](CONFIGURATION_REFERENCE.md#logs) ·
+[Event codes](CONFIGURATION_REFERENCE.md#event-codes)

@@ -1,0 +1,238 @@
+# Character effects reference
+
+The technical detail behind the [fighter effects guide](FX.md): who owns a
+request, coverage, the candidate variant ledger, provenance and the
+implementation history. Version notes below are historical unless they say
+otherwise; `src/moves.rs` and `src/fighters.rs` are unchanged from 0.2.1 to
+0.3.0.
+
+## Overview
+
+On forwards original requests. Off suppresses the named character effects
+below for a fighter whose row is Off, when the scope allows it. Reduced keeps
+selected move cues and removes surrounding decoration. Its goal is to approach
+Off's frame-time stability; a visible change alone does not establish that
+benefit ([performance method](FX_PERFORMANCE_METHOD.md)).
+
+This policy is Online Deluxe's character-FX feature, moved into its own
+plugin. Stage backgrounds are a separate On/Off policy on the same NRO and
+are not fighter Reduced variants ([stage backgrounds](STAGES.md)). The Off tables, the request classification (`effects_reduced::classify`,
+`request_hash`) and the hooks are ported from
+`intpa/ssbu-online-deluxe-rewrite` at `f3fe436`. What changed is the mode:
+Deluxe had one global FX mode; this plugin has one per covered fighter, and
+Reduced is the per-move variants of `src/moves.rs` plus the harness `cull=`
+list (see Reduced implementation), not Deluxe's character-wide tables.
+
+## Who owns a request
+
+Each effect request is decided with the mode of the fighter that owns it
+(`src/fighters.rs`):
+
+1. When the policy reads the requesting object's context (category, kind,
+   motion, status), a matching **move profile** names the fighter. Weapons
+   count: Falcon Punch bird `0x58`, PK Thunder `0x61`/`0x163`, Explosive
+   Flame `0x110`/`0x111`, Autoreticle `0x112`, Gigaflare burst `0x246`
+   (burst statuses), Scintilla `0x247`, Shadow Flare `0x248`/`0x249`.
+2. A tracked **fighter** object (category 0) with no matching move is still
+   that fighter, by kind.
+3. Otherwise the **name** decides, through a map built at compile time from
+   every name the policy acts on without a move: the Off tables
+   (`effects::TARGET_NAMES`, `effects_catalog::LEGACY_NAMES`), the name tables
+   of the moves in `src/moves.rs` and the Gigaflare screen overlay. Each
+   name is classified by its character prefix; a name with no prefix, or two,
+   fails the build.
+
+| Prefix | Fighter |
+| --- | --- |
+| `captain_` | Captain Falcon |
+| `ness_`, `P_Ness` | Ness |
+| `lucas_`, `P_Lucas` | Lucas |
+| `palutena_`, `P_Palutena` | Palutena |
+| `edge_`, `P_Edge` | Sephiroth |
+| `eflame_`, `P_Eflame` | Pyra |
+| `elight_`, `P_Elight` | Mythra |
+| `master_` | Byleth |
+| `inkling_` | Inkling |
+| `kirby_` | Kirby |
+
+A request no fighter owns passes through untouched, whatever the rows say.
+The plugin covers exactly ten fighters (`fighters::ALL`: Captain Falcon, Ness,
+Lucas, Palutena, Sephiroth, Pyra, Mythra, Byleth, Inkling, Kirby), each with a
+page row and an INI line. Kazuya, Ike, Chrom, Roy and Ganondorf were removed
+from the code in 0.2.0 (no fighter entry, Off tables, move profiles or name
+prefixes): their requests pass through untouched, like any uncovered fighter's.
+The 16 move profiles that remain are Falcon Punch, Ness up special, Lucas up
+special, Palutena (rapid jab, neutral special, up special, side special, up
+smash, tilts, wing smash, up air) and Sephiroth (forward smash, purple dash,
+neutral special, down special, side special).
+
+Shared names inside a move table follow the move's owner, never their prefix:
+`sys_flash` (Ness and Lucas up special), `sys_smash_flash` and
+`sys_smash_flash_s` (Sephiroth smashes) and Sephiroth's prefix-less
+emitter-style parents (`flare1`, `aura1`, `line1`, and so on). Those names need
+a context; without one they pass through. The test
+`fighters::tests::move_table_names_follow_the_move_owner` lists them and fails
+when the tables change without the list.
+
+With every row at one mode, each decision equals Deluxe's global-mode decision
+(`policy::tests::the_same_inputs_match_the_single_mode_pipeline`).
+
+## All
+
+Moving **All** sets every row. Reduced on a row without a Reduced variant sets
+that row On, never Off. While the rows differ, All has no value: the menu
+shows `Unavailable` (the host's rendering of `CHOICE_UNAVAILABLE`, since a
+fourth "Mixed" choice cannot be read-only on its own), and the INI has no
+`all=` line.
+
+## Coverage
+
+The catalog in the code is `effects_catalog::LEGACY_NAMES` (276 names from the
+peer's unconditional legacy tables, including three verified Inkling roller
+splash parents), `effects::TARGET_NAMES` (47 names, 15 of them also in the
+legacy table) and 16 qualified move profiles (`effect_context::Profile`). The
+ledgers in `reference/` keep the import-time numbers, from before Kazuya, Ike,
+Chrom and Roy left: 317 global names, 19 profiles and 124 initial targets.
+Aliases and emitter-child names are source candidates, not proof that every
+name reaches a request hook. [Moves and variants](#moves-and-variants) has the
+per-move table.
+
+The plugin hooks the ordinary EffectModule request wrappers plus ten ACMD
+creation variants: EFFECT, EFFECT_FOLLOW, EFFECT_FOLLOW_ALPHA,
+EFFECT_FOLLOW_NO_STOP, EFFECT_FLW_POS, EFFECT_FLW_POS_NO_STOP, LANDING_EFFECT,
+EFFECT_FOLLOW_FLIP, EFFECT_FOLLOW_FLIP_ALPHA and EFFECT_FOLLOW_NO_STOP_FLIP.
+Flip variants filter their first two effect names independently, each with its
+own owner; joint, transform, scale and other arguments remain intact.
+
+On is immediate passthrough: with every row On the hooks return before reading
+the scope or any context, except while the `TRACE_EFFECTS` marker is latched
+(the EffectModule request hooks then read the actor's context) and for the
+Special Zoom probe names, which read the scope first. Off substitutes the named `null` resource and calls
+the original, so downstream bookkeeping still runs. Only `edge_fire3_screen2`'s
+screen request is skipped. New effects follow the setting during the same
+match; already created effects expire naturally. There are no per-frame
+deletion sweeps.
+
+## Moves and variants
+
+The 0.1.x line (branch `archive/0.1.x-appearance-variants`, release 0.1.0)
+chose its Reduced variants by appearance; some measured slower than On. The
+0.2 line restarts from measurements: `src/moves.rs` lists the moves that the
+2026-10-15 console captures put on the ledger, every effect layer their
+scripts request, and 1..N candidate variants per move. **No variant is
+accepted yet.** The protocol that accepts one is [HARNESS](HARNESS.md);
+the console result so far is that Vanilla and LessLag hold 60 on every
+move and only LLUltra drops, so every pass runs on LLUltra.
+
+| Move | Fighter row | Variants (lightest first) | Source |
+| --- | --- | --- | --- |
+| Falcon Punch | Captain Falcon | 1 wings off (0.1.x) · 2 wings, hold and flash off | fighter + weapon SpecialN |
+| Blazing End | Pyra | 1 trails and illusion off · 2 + sword flame · 3 everything but sword open, throw and return | SpecialS/AirS/Flick/Catch, esword Fly/Rotate/Back/Hit |
+| Flame Nova | Pyra | 1 hold aura and trail · 2 + hold sword, ring1 · 3 only sword and explosions | SpecialNStart/Hold/N1/N4 (N2, N3 pending) |
+| Prominence Revolt | Pyra | 1 fire2, trail end, smoke, pillar ground · 2 + every sword fire and the pillar impact | SpecialHiStart/Hi, firepillar SpecialHi |
+| Specials | Mythra | 1 sword light layers (0.1.x; specials not extracted) | 0.1.x |
+| Explosive Flame | Palutena | 1 appear, wand lights, backlight off (0.1.x) | SpecialS, explosiveflame Explode |
+| PK Thunder | Ness | 1 launch burst off (0.1.x) | SpecialAirHi, pkthunder Move |
+| PK Fire | Ness | 1 hand flash off · 2 + fire pillar | SpecialS/AirS, pkfire Shoot/Pillar |
+| PK Thunder | Lucas | 1 launch burst off (0.1.x) | SpecialAirHi, pkthunder Move |
+| Hammer | Kirby | 1 charge glow off · 2 + smoke and wind · 3 only arc and max burst | SpecialS*/AirS*, kirby_hammer SpecialS* |
+| Specials | Byleth | 1 axe flare 3 and hold 2 (0.1.x; specials not extracted) | 0.1.x |
+| Roller | Inkling | none: Reduced was an EFF sibling in 0.1.x, which is deleted in 0.2.0; Inkling offers On / Off | 0.1.x runtime check |
+| Gigaflare | Sephiroth | 1 first burst and sign off, overlay skipped (0.1.x) | edge_fire Burst S/M/L |
+
+Kazuya, Ike, Chrom, Roy and Ganondorf have no move here and are removed from
+the code (see [Who owns a request](#who-owns-a-request)); their INI lines are
+unknown keys, ignored on load and kept on rewrite. Page rows for the supported
+moves are in [The FX Control page](MENU.md#rows).
+
+## Differences from the peer
+
+Off removes included layers even where the peer merely shrank them. Reduced
+retains selected cues and lighter layers. The policy is not an exact copy of
+the peer.
+
+Shared effect names require the correct fighter/weapon category, kind and
+move. There is no owner traversal or global victim timer. Forty-one named
+projectile/position, reflector/counter and hitbox cues are preserved,
+including Palutena's up-air marker; they are listed under `excluded_cues` in
+the policy. General hit/shield/KO feedback remains outside the filter.
+Article/model/posture changes, camera/LOD changes, color/flash/afterimage
+command hooks and unidentified raw hashes are not ported. Generic
+`sys_attack_arc_d` and unobserved creation variants (NO_SCALE, COLOR,
+UNSYNC_VIS, RND, VARIATION) are outside current coverage. In particular, a
+separate article or scripted tint can remain visible in Off.
+
+[Initial targets](../reference/fx-policy.json) and
+[expanded targets and qualifications](../reference/fx-expanded-policy.json)
+record the policy; raw source presence alone does not establish runtime
+coverage.
+
+## Evidence and provenance
+
+User archive: effect disable-reduce source.zip, May 14 master/screen sources.
+The source SHA and per-profile source groups are in the expanded policy.
+Vanilla dumped scripts independently identify the actual PK Thunder names:
+[Ness](https://github.com/WuBoytH/SSBU-Dumped-Scripts/blob/59004685238a3f6f93bae905d3a4e079701c40b4/smashline/lua2cpp_ness/ness/SpecialAirHi.txt) and
+[Lucas](https://github.com/WuBoytH/SSBU-Dumped-Scripts/blob/59004685238a3f6f93bae905d3a4e079701c40b4/smashline/lua2cpp_lucas/lucas/SpecialAirHi.txt).
+The Reduced layer and cull names in `src/moves.rs` are parent requests at that
+pin, written by hand.
+
+Palutena/Sephiroth creation names were corroborated with vanilla scripts and
+local EFF resource names extracted read-only from data.arc. No Nintendo asset
+or compiled peer plugin is included.
+
+The bounded primitive Lua bridge follows skyline-smash bed642e: L2CAgent 0x48
+bytes, 24-byte L2CValue return forces AArch64 x8, with unused MaybeUninit
+padding. At most 32 primitive arguments are retained; unknown or oversized
+commands pass through.
+
+Runtime evidence for the Reduced families was gathered with **Online Deluxe**
+builds and its single global FX row (NRO prefixes `c1706bbe`, `5d47c704`,
+`833cc40b`, `24e714e7`, `7c435729`, `b99...`, `c0e9a625`): Palutena/Sephiroth
+Off/On, Sephiroth neutral-B suppression, the Reduced families in the
+[runtime matrix](FX_RUNTIME_MATRIX.md). FX Control 0.1.0 ran in Eden next to
+Deluxe 0.5.0 builds for the per-move captures in the quota section of the
+[emulator results](FX_EMULATOR_RESULTS.md). 0.2.0 has **no recorded runtime
+acceptance of its own yet**: its per-move variants, the descriptor version 4
+page and the plugin's own online hooks are host-tested. On 2026-10-25 (UTC)
+the operator reported testing in Eden and on an Erista Switch without issues
+observed. That report carries no build or scenario list, accepts no Reduced
+variant, and does not close the stage limits in
+[STAGES](STAGES.md#remaining-runtime-acceptance)
+([operator-reported testing](MEDIA.md#operator-reported-testing)).
+This repository records no fighter runtime acceptance tied to a 0.2.1 or
+0.3.0 build either; the operator report above is the current, build-less
+status.
+
+## Reduced implementation
+
+Since 0.2 the request policy is per move (`src/moves.rs`): each move under
+study lists its requested layers and numbered cull-set variants; the INI
+selects one variant per move (`variant.<move>=N`) and Reduced nulls exactly
+that set, keeping every other layer. A move with a context profile claims a
+request only from an actor in that move (a Gigaflare layer requested
+elsewhere is preserved); a move without one (Pyra's specials, Kirby's hammer,
+PK Fire) claims its layers by name. Variants are accepted only through the
+console protocol in [HARNESS](HARNESS.md). The character-wide and
+appearance-chosen tables of 0.1.x are on the archive branch.
+
+In 0.1.x, Palutena's up-air resource had a separate lighter copy (an EFF
+sibling, see below) so its visible cue remained; that copy was deleted in
+0.2.0. The Off policy deliberately protects that up-air parent, so Off is not
+a zero-cost reference for that parent.
+
+### EFF siblings (deleted in 0.2.0)
+
+The 0.1.x EFF sibling feature (ARCropolis load callbacks that appended lighter
+copies of Palutena up air, Shadow Flare, the Inkling roller and Chrom side B)
+was deleted in 0.2.0: the modules, hooks 264 and 265 (`kill_kind`,
+`detach_kind`) and the ACMD hooks 0x11a and 0x11b (`EFFECT_OFF_KIND`,
+`EFFECT_DETACH_KIND`) are gone, and ARCropolis is not needed. Reduced is
+exactly the per-move variant from `src/moves.rs`; Inkling has no Reduced
+variant. The code survives only on the branch
+`archive/0.1.x-appearance-variants`.
+
+The roller runtime check (Deluxe `24e714e7`) exposed an Off-table alias gap:
+the peer names `inkling_roller`, while the game requests
+`inkling_roller_splash_walk`, `_run` and `_air`; those three parents are in the
+Off table. Ground ink and gameplay articles remain outside the filter.

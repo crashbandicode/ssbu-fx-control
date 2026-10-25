@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 968" width="560" height="968" role="img" aria-labelledby="t d">
+  <title id="t">Fighter and stage settings are independent; two writers save config.ini</title>
+  <desc id="d">Fighter effects: scope=online applies only online outside Training and scope=all everywhere; all= is applied first and each fighter line wins; variant.move=N applies while that row is Reduced; new effect requests follow at once. Stage backgrounds: no Scope gate, offline and online, ignoring fighter All and Reduced; stages= is applied first and each stage line wins; On or Off only, reload the stage to apply. Writers: Deluxe host persistence 0.5.3 or later rewrites one key=value line for a Scope or single fighter row edit; the plugin's background saver writes the whole file after any change once quiet for two seconds, including all=, variant lines, stages= and every stage line. Both replace the file atomically and keep config.previous.ini. Hand edits apply at the next game start.</desc>
+  <rect width="560" height="968" fill="#ffffff"/>
+  <g font-family="DejaVu Sans, Arial, Helvetica, sans-serif" fill="#111111" font-size="20">
+    <rect x="16" y="16" width="528" height="284" rx="10" fill="#eef3fb" stroke="#1f4e8c" stroke-width="3"/>
+    <text x="32" y="50" font-size="22" font-weight="bold">Fighter effects (FX Control page)</text>
+    <text x="32" y="86">&#8226; Gate: scope=online applies only online,</text>
+    <text x="50" y="114">outside Training; scope=all everywhere</text>
+    <text x="32" y="150">&#8226; all= first, then each fighter line;</text>
+    <text x="50" y="178">a fighter line wins</text>
+    <text x="32" y="214">&#8226; variant.&lt;move&gt;=N applies while that</text>
+    <text x="50" y="242">row is Reduced</text>
+    <text x="32" y="278">&#8226; New effect requests follow at once</text>
+
+    <rect x="16" y="320" width="528" height="220" rx="10" fill="#e6f4ea" stroke="#1e6b34" stroke-width="3"/>
+    <text x="32" y="354" font-size="22" font-weight="bold">Stage backgrounds (Stages page)</text>
+    <text x="32" y="390">&#8226; No Scope gate: offline and online;</text>
+    <text x="50" y="418">ignores fighter All and Reduced</text>
+    <text x="32" y="454">&#8226; stages= first, then each stage.&lt;key&gt;=;</text>
+    <text x="50" y="482">a stage line wins</text>
+    <text x="32" y="518">&#8226; On / Off only; reload the stage to apply</text>
+
+    <rect x="16" y="560" width="528" height="392" rx="10" fill="#f4f4f4" stroke="#444444" stroke-width="2"/>
+    <text x="32" y="594" font-size="22" font-weight="bold">Who writes config.ini</text>
+    <rect x="32" y="610" width="496" height="96" rx="6" fill="#ffffff" stroke="#1f4e8c" stroke-width="2"/>
+    <text x="48" y="638" font-weight="bold">Deluxe host persistence (0.5.3+)</text>
+    <text x="48" y="666">Scope or one fighter row: rewrites that</text>
+    <text x="48" y="692">one key=value line</text>
+    <rect x="32" y="722" width="496" height="124" rx="6" fill="#ffffff" stroke="#111111" stroke-width="2"/>
+    <text x="48" y="750" font-weight="bold">Plugin saver (own background thread)</text>
+    <text x="48" y="778">After any change, once quiet for 2 s:</text>
+    <text x="48" y="804">whole file, including all=, variant.*,</text>
+    <text x="48" y="830">stages= and every stage.&lt;key&gt;=</text>
+    <text x="32" y="880">Both replace the file atomically and keep</text>
+    <text x="32" y="906">config.previous.ini. Hand edits apply at</text>
+    <text x="32" y="932">the next game start.</text>
+  </g>
+</svg>

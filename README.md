@@ -15,9 +15,9 @@ Tested in **Eden** and on an **Erista Switch** without issues observed, with
 
 ## Fighter effects
 
-![Captain Falcon's row going from On to Off to Reduced and back to On](docs/media/fx-control-edit.gif)
+![Palutena's Autoreticle with effects On above Off: the cyan staff glow disappears while the targeting reticle and hits remain](docs/media/palutena-autoreticle-on-off.webp)
 
-*0.2.1 development capture, Scope All.*
+*Palutena Autoreticle, On / Off. Archived FX 0.1.0 footage. [Capture notes](docs/MEDIA.md#fighter-comparison)*
 
 Each fighter is **On** (default), **Off** or **Reduced**. Reduced keeps the
 cue that shows what a move does; a fighter without a variant offers On and

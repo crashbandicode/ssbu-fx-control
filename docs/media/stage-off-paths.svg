@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 1190" width="560" height="1190" role="img" aria-labelledby="t d">
+  <title id="t">How a stage row set to Off hides particles and scenery</title>
+  <desc id="d">Particle path: a stage effect request to EffectManager 0x3563430 uses the named null resource only when the caller is one of seven audited sites, the name is in the 47-name table, the live stage ID is that name's stage and the row is Off; otherwise the request is unchanged. Model path: at construction 0x35e26a0, if the registry is healthy and the renderer has the primary vtable and initializer, a MODELS folder path is recorded in the 128 by 8 table. At draw 0x35d73e0 the argument w1 is forced off only when the registry is healthy and the bucket lock is free, the renderer has one recorded path, still has the primary vtable, the stage ID and path pair is in MODELS, the row is Off and the native argument requests the draw; otherwise the native argument is kept. Native visibility is never changed. Each path runs only if its hooks passed the install-time byte guards.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 0 L5 10 Z" fill="#111111"/>
+    </marker>
+  </defs>
+  <rect width="560" height="1190" fill="#ffffff"/>
+  <g font-family="DejaVu Sans, Arial, Helvetica, sans-serif" fill="#111111" font-size="20">
+    <rect x="16" y="16" width="528" height="440" rx="10" fill="#f4f4f4" stroke="#444444" stroke-width="2"/>
+    <text x="32" y="48" font-size="24" font-weight="bold">Particle request</text>
+    <rect x="32" y="64" width="496" height="60" rx="6" fill="#ffffff" stroke="#111111" stroke-width="2"/>
+    <text x="280" y="89" text-anchor="middle">Stage effect request to</text>
+    <text x="280" y="113" text-anchor="middle">EffectManager 0x3563430</text>
+    <line x1="280" y1="124" x2="280" y2="144" stroke="#111111" stroke-width="2" marker-end="url(#a)"/>
+    <rect x="32" y="148" width="496" height="172" rx="6" fill="#ffffff" stroke="#111111" stroke-width="2"/>
+    <text x="48" y="176" font-weight="bold">Replaced only if all four hold:</text>
+    <text x="48" y="206">1  Caller returns to one of 7 audited sites</text>
+    <text x="48" y="236">2  Name is in the 47-name table</text>
+    <text x="48" y="266">3  Live stage ID is that name's stage</text>
+    <text x="48" y="296">4  That stage row is Off</text>
+    <line x1="152" y1="320" x2="152" y2="340" stroke="#111111" stroke-width="2" marker-end="url(#a)"/>
+    <line x1="408" y1="320" x2="408" y2="340" stroke="#111111" stroke-width="2" marker-end="url(#a)"/>
+    <rect x="32" y="344" width="240" height="96" rx="6" fill="#e6f4ea" stroke="#1e6b34" stroke-width="3"/>
+    <text x="48" y="372" font-weight="bold">All hold:</text>
+    <text x="48" y="398">x1 = named null</text>
+    <text x="48" y="422">resource, event 112</text>
+    <rect x="288" y="344" width="240" height="96" rx="6" fill="#ffffff" stroke="#444444" stroke-width="2"/>
+    <text x="304" y="372" font-weight="bold">Otherwise:</text>
+    <text x="304" y="398">original request,</text>
+    <text x="304" y="422">unchanged</text>
+
+    <rect x="16" y="476" width="528" height="636" rx="10" fill="#f4f4f4" stroke="#444444" stroke-width="2"/>
+    <text x="32" y="508" font-size="24" font-weight="bold">Scenery model draw</text>
+    <rect x="32" y="524" width="496" height="144" rx="6" fill="#ffffff" stroke="#111111" stroke-width="2"/>
+    <text x="48" y="552" font-weight="bold">At construction (0x35e26a0):</text>
+    <text x="48" y="578">if the registry is healthy and the</text>
+    <text x="48" y="602">renderer has the primary vtable and</text>
+    <text x="48" y="626">initializer, a MODELS folder path is</text>
+    <text x="48" y="650">recorded in the 128&#215;8 table</text>
+    <line x1="280" y1="668" x2="280" y2="688" stroke="#111111" stroke-width="2" marker-end="url(#a)"/>
+    <rect x="32" y="692" width="496" height="230" rx="6" fill="#ffffff" stroke="#111111" stroke-width="2"/>
+    <text x="48" y="720" font-weight="bold">At draw (0x35d73e0), off only if all hold:</text>
+    <text x="48" y="750">1  Registry healthy, bucket lock free</text>
+    <text x="48" y="780">2  Renderer has one recorded path</text>
+    <text x="48" y="810">3  It still has the primary vtable</text>
+    <text x="48" y="840">4  Stage ID + path pair is in MODELS</text>
+    <text x="48" y="870">5  That stage row is Off</text>
+    <text x="48" y="900">6  Native argument requests the draw</text>
+    <line x1="152" y1="922" x2="152" y2="942" stroke="#111111" stroke-width="2" marker-end="url(#a)"/>
+    <line x1="408" y1="922" x2="408" y2="942" stroke="#111111" stroke-width="2" marker-end="url(#a)"/>
+    <rect x="32" y="946" width="240" height="96" rx="6" fill="#e6f4ea" stroke="#1e6b34" stroke-width="3"/>
+    <text x="48" y="974" font-weight="bold">All hold:</text>
+    <text x="48" y="1000">draw argument w1</text>
+    <text x="48" y="1024">= off, event 115</text>
+    <rect x="288" y="946" width="240" height="96" rx="6" fill="#ffffff" stroke="#444444" stroke-width="2"/>
+    <text x="304" y="974" font-weight="bold">Otherwise:</text>
+    <text x="304" y="1000">native draw</text>
+    <text x="304" y="1024">argument</text>
+    <text x="32" y="1072" font-size="18">Native visibility (+0x4b0 / +0x4b1) is never</text>
+    <text x="32" y="1096" font-size="18">changed; native false never becomes true.</text>
+    <text x="16" y="1144" font-size="18">Each path runs only if its hooks passed the</text>
+    <text x="16" y="1168" font-size="18">install-time byte guards.</text>
+  </g>
+</svg>

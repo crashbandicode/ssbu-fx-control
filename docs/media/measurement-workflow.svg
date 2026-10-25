@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 870" width="680" height="870" role="img" aria-labelledby="t d">
+  <title id="t">Measuring one move</title>
+  <desc id="d">Five steps: observe layers, write candidate variants, capture On, Off and every variant on the console under LLUltra for about 30 seconds, pass only when no one-second window falls below 59 render callbacks and the cue is kept, then record the lowest passing variant as Accepted. A failing variant is recorded Rejected and bisected with cull= before capturing again. Eden under a CPU quota only ranks candidates and never accepts one.</desc>
+  <rect width="680" height="870" fill="#ffffff"/>
+  <g font-family="DejaVu Sans, Verdana, Arial, Helvetica, sans-serif" text-anchor="middle" fill="#0b1220">
+    <text x="340" y="46" font-size="32" font-weight="700">Measuring one move</text>
+
+    <rect x="30" y="70" width="370" height="100" rx="12" fill="#dbeafe" stroke="#1e3a8a" stroke-width="3"/>
+    <text x="215" y="112" font-size="28" font-weight="700">1  Observe layers</text>
+    <text x="215" y="150" font-size="24">scripts at PIN, or trace</text>
+
+    <rect x="30" y="200" width="370" height="100" rx="12" fill="#dbeafe" stroke="#1e3a8a" stroke-width="3"/>
+    <text x="215" y="242" font-size="28" font-weight="700">2  Write candidates</text>
+    <text x="215" y="280" font-size="24">variants 1..N, keep cue</text>
+
+    <rect x="30" y="330" width="370" height="140" rx="12" fill="#1e3a8a" stroke="#1e3a8a" stroke-width="3"/>
+    <text x="215" y="372" font-size="28" font-weight="700" fill="#ffffff">3  Console capture</text>
+    <text x="215" y="410" font-size="24" fill="#ffffff">LLUltra, about 30 s each:</text>
+    <text x="215" y="446" font-size="24" fill="#ffffff">On, Off, every variant</text>
+
+    <rect x="30" y="500" width="370" height="140" rx="12" fill="#dbeafe" stroke="#1e3a8a" stroke-width="3"/>
+    <text x="215" y="542" font-size="28" font-weight="700">4  Compare</text>
+    <text x="215" y="580" font-size="24">no 1 s window below 59</text>
+    <text x="215" y="616" font-size="24">callbacks, cue kept?</text>
+
+    <rect x="30" y="710" width="370" height="140" rx="12" fill="#dcfce7" stroke="#166534" stroke-width="3"/>
+    <text x="215" y="752" font-size="28" font-weight="700">5  Record</text>
+    <text x="215" y="790" font-size="24">lowest pass = Accepted</text>
+    <text x="215" y="826" font-size="24">ledger + src/moves.rs</text>
+
+    <rect x="440" y="185" width="220" height="130" rx="12" fill="#f3f4f6" stroke="#374151" stroke-width="3" stroke-dasharray="10 7"/>
+    <text x="550" y="226" font-size="26" font-weight="700">Eden quota</text>
+    <text x="550" y="262" font-size="22">ranks only;</text>
+    <text x="550" y="296" font-size="22" font-weight="700">never accepts</text>
+
+    <rect x="440" y="500" width="220" height="150" rx="12" fill="#fee2e2" stroke="#991b1b" stroke-width="3"/>
+    <text x="550" y="540" font-size="26" font-weight="700">Fail</text>
+    <text x="550" y="576" font-size="22">record Rejected,</text>
+    <text x="550" y="606" font-size="22">bisect with cull=,</text>
+    <text x="550" y="636" font-size="22">capture again</text>
+
+    <text x="240" y="684" font-size="24" font-weight="700" fill="#166534" text-anchor="start">pass</text>
+  </g>
+  <g stroke="#111827" stroke-width="3" fill="none">
+    <path d="M215 170V188"/>
+    <path d="M215 300V318"/>
+    <path d="M215 470V488"/>
+    <path d="M215 640V698"/>
+    <path d="M400 570H428"/>
+    <path d="M550 500V400H412"/>
+    <path d="M412 250H428" stroke-dasharray="6 5"/>
+  </g>
+  <g fill="#111827">
+    <path d="M205 186L225 186L215 200z"/>
+    <path d="M205 316L225 316L215 330z"/>
+    <path d="M205 486L225 486L215 500z"/>
+    <path d="M205 696L225 696L215 710z"/>
+    <path d="M426 560L426 580L440 570z"/>
+    <path d="M414 390L414 410L400 400z"/>
+    <path d="M426 240L426 260L440 250z"/>
+    <path d="M414 240L414 260L400 250z"/>
+  </g>
+</svg>
