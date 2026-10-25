@@ -57,7 +57,8 @@ accepts one.
    variant row (Deluxe page, or `variant.<move>=n` in the INI), capture,
    analyse; repeat per variant without leaving Training: the row applies at
    once. In Training Deluxe 0.5.3 needs **ZR held** with Left/Right for any
-   edit in its window (a plain press is ignored; ZL + D-pad swaps the
+   edit in its window, and 0.5.6 or later in every scene (a plain press is
+   ignored; ZL + D-pad swaps the
    controlled fighter in Training). Where a candidate is close, bisect with `cull=` (below) before
    adding a new variant.
 4. **Record.** Ledger row per move and variant; `status` in `moves.rs`

@@ -85,7 +85,8 @@ legacy table) and 16 qualified move profiles (`effect_context::Profile`). The
 ledgers in `reference/` keep the import-time numbers, from before Kazuya, Ike,
 Chrom and Roy left: 317 global names, 19 profiles and 124 initial targets.
 Aliases and emitter-child names are source candidates, not proof that every
-name reaches a request hook. The README has the per-move table.
+name reaches a request hook. [Moves and variants](#moves-and-variants) has the
+per-move table.
 
 The plugin hooks the ordinary EffectModule request wrappers plus ten ACMD
 creation variants: EFFECT, EFFECT_FOLLOW, EFFECT_FOLLOW_ALPHA,
@@ -102,6 +103,38 @@ the original, so downstream bookkeeping still runs. Only `edge_fire3_screen2`'s
 screen request is skipped. New effects follow the setting during the same
 match; already created effects expire naturally. There are no per-frame
 deletion sweeps.
+
+## Moves and variants
+
+The 0.1.x line (branch `archive/0.1.x-appearance-variants`, release 0.1.0)
+chose its Reduced variants by appearance; some measured slower than On. The
+0.2 line restarts from measurements: `src/moves.rs` lists the moves that the
+2026-10-15 console captures put on the ledger, every effect layer their
+scripts request, and 1..N candidate variants per move. **No variant is
+accepted yet.** The protocol that accepts one is [HARNESS](HARNESS.md);
+the console result so far is that Vanilla and LessLag hold 60 on every
+move and only LLUltra drops, so every pass runs on LLUltra.
+
+| Move | Fighter row | Variants (lightest first) | Source |
+| --- | --- | --- | --- |
+| Falcon Punch | Captain Falcon | 1 wings off (0.1.x) · 2 wings, hold and flash off | fighter + weapon SpecialN |
+| Blazing End | Pyra | 1 trails and illusion off · 2 + sword flame · 3 everything but sword open, throw and return | SpecialS/AirS/Flick/Catch, esword Fly/Rotate/Back/Hit |
+| Flame Nova | Pyra | 1 hold aura and trail · 2 + hold sword, ring1 · 3 only sword and explosions | SpecialNStart/Hold/N1/N4 (N2, N3 pending) |
+| Prominence Revolt | Pyra | 1 fire2, trail end, smoke, pillar ground · 2 + every sword fire and the pillar impact | SpecialHiStart/Hi, firepillar SpecialHi |
+| Specials | Mythra | 1 sword light layers (0.1.x; specials not extracted) | 0.1.x |
+| Explosive Flame | Palutena | 1 appear, wand lights, backlight off (0.1.x) | SpecialS, explosiveflame Explode |
+| PK Thunder | Ness | 1 launch burst off (0.1.x) | SpecialAirHi, pkthunder Move |
+| PK Fire | Ness | 1 hand flash off · 2 + fire pillar | SpecialS/AirS, pkfire Shoot/Pillar |
+| PK Thunder | Lucas | 1 launch burst off (0.1.x) | SpecialAirHi, pkthunder Move |
+| Hammer | Kirby | 1 charge glow off · 2 + smoke and wind · 3 only arc and max burst | SpecialS*/AirS*, kirby_hammer SpecialS* |
+| Specials | Byleth | 1 axe flare 3 and hold 2 (0.1.x; specials not extracted) | 0.1.x |
+| Roller | Inkling | none: Reduced was an EFF sibling in 0.1.x, which is deleted in 0.2.0; Inkling offers On / Off | 0.1.x runtime check |
+| Gigaflare | Sephiroth | 1 first burst and sign off, overlay skipped (0.1.x) | edge_fire Burst S/M/L |
+
+Kazuya, Ike, Chrom, Roy and Ganondorf have no move here and are removed from
+the code (see [Who owns a request](#who-owns-a-request)); their INI lines are
+unknown keys, ignored on load and kept on rewrite. The page rows for these
+moves are in [The FX Control page](MENU.md#rows).
 
 ## Differences from the peer
 
@@ -150,9 +183,12 @@ builds and its single global FX row (NRO prefixes `c1706bbe`, `5d47c704`,
 Off/On, Sephiroth neutral-B suppression, the Reduced families in the
 [runtime matrix](FX_RUNTIME_MATRIX.md). FX Control 0.1.0 ran in Eden next to
 Deluxe 0.5.0 builds for the per-move captures in the quota section of the
-[emulator results](FX_EMULATOR_RESULTS.md). 0.2.0 has **no runtime acceptance of
-its own yet**: its per-move variants, the descriptor version 4 page and the
-plugin's own online hooks are host-tested only.
+[emulator results](FX_EMULATOR_RESULTS.md). 0.2.0 has **no recorded runtime
+acceptance of its own yet**: its per-move variants, the descriptor version 4
+page and the plugin's own online hooks are host-tested. The operator has since
+reported testing in Eden and on an Erista Switch without issues observed; that
+report carries no build or scenario list and accepts no variant
+([operator-reported testing](MEDIA.md#operator-reported-testing)).
 
 ## Reduced implementation
 
