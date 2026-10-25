@@ -29,7 +29,7 @@ matches and Training. Variants are not yet proven to raise FPS.
 
 ![Smashville On above Off: village scenery disappears while the blue sky, fighters and playable platform remain](docs/media/smashville-on-off.jpg)
 
-*Separate On/Off development captures, 2026-10-22. [Media notes](docs/MEDIA.md#smashville-onoff-comparison)*
+*Separate On/Off development captures, 2026-10-22. [Media notes](docs/MEDIA.md#smashville-on-off-comparison)*
 
 Each stage is **On** (default) or **Off**; there is no Reduced. Stage rows
 apply online and offline, separately from fighter Scope and All. Reload the
