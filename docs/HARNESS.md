@@ -72,11 +72,77 @@ accepts one.
 | --- | --- | --- |
 | `variant.<move>=N` | `config.ini`, or the move's row on the Deluxe page | Selects the Reduced variant per move (0 = original). Written by the plugin only when not the default. |
 | `cull=<name>,<name>` | `config.ini` | Up to 16 extra request names (with a covered fighter's prefix) nulled while that fighter's row is Reduced and the scope allows. Bisection tool: null one more layer without editing the tables. Read at start; never rewritten. |
-| `TRACE_EFFECTS` | marker file in `sd:/ultimate/ssbu_fx_control/` | Latched at start. Every EffectModule `req*` hook records the first time it sees each (name, actor category, kind, status) as event code 110, up to 512 keys per boot. `tools/resolve_trace.py events.log` prints the names per actor kind (names from `reference/effect_names.txt`; regenerate with `tools/export_effect_names.py`, add script names by hand under `# manual`). |
+| `TRACE_EFFECTS` | marker file in `sd:/ultimate/ssbu_fx_control/` | Latched at start. Every EffectModule `req*` hook records the first time it sees each (name, actor category, kind, status) as event code 110, up to 512 keys per boot. The same marker records stage particle code 114 and scenery-group code 116. `tools/resolve_trace.py events.log` prints the names per actor kind (names from `reference/effect_names.txt`; regenerate with `tools/export_effect_names.py`, add script names by hand under `# manual`). |
+| `TRACE_STAGE_DIAGNOSTICS` | marker file in the same directory | Latched once when stage hooks install. Codes 117, 118 and 119. Independent of `TRACE_EFFECTS` and of stage On/Off. Absent file keeps the previous stage hot path. |
 
 The trace reads the actor's kind, motion and status for every request while
 the marker is present (uncovered fighters included), so keep it absent from
 measurement captures.
+
+## Stage diagnostics
+
+Create `sd:/ultimate/ssbu_fx_control/TRACE_STAGE_DIAGNOSTICS` and fully restart
+Smash before the match. The plugin reads that path once during stage-hook
+install and latches it. Creating or deleting the file during a running
+session does nothing until the next process start. There is no per-frame
+reload. Code 117 is written at that install with `a` = 1 when the file was
+present and `a` = 0 when it was absent. Install also appends the reason and
+flag map to `install.log`.
+
+The marker is independent of `TRACE_EFFECTS`. Stage On and stage Off are both
+observed. With the marker absent, the stage hooks keep their previous early
+return and do not read the live stage id for these counters.
+
+Code 118 is a cumulative count of **observed model-draw hook calls** on the
+eleven normal stages only. It is not a rendered frame, a completed pass, or
+an FPS figure. `a` is `(stage_id << 32) | reason` and `b` is the cumulative
+count. The background logger scans every 5 seconds and writes changed
+nonzero counters, at most 32 per 500 ms wake, so one scan cannot fill the
+128-event ring. A count can therefore reach `events.log` a few seconds after
+the calls. Stage ids outside those eleven, including `-1` while no stage is
+active, are not stored.
+
+Lookup reasons, one per call that reaches the registry read: `1 found`,
+`2 unregistered`, `3 ambiguous` (the stored path is 0), `4 contended`
+(`try_read` failed on that bucket; the registry is not disabled), `5 disabled` (null
+renderer, unhealthy registry, or poisoned lock). A found path also gets
+exactly one result reason: `6 requested-native-hidden`, `7 native-visible`,
+`8 suppressed`, `9 wrong-vtable`, `10 wrong-stage`. `found` equals the sum of
+those result reasons. Adding every reason together double-counts found calls.
+`wrong-stage` means the registered path is not a static target for the live
+stage id. `suppressed` means this call cleared the draw-record argument.
+`native-visible` and `requested-native-hidden` mean this call left that
+argument alone. None of these reasons identify which pixels the display showed.
+
+Code 119 is the first time the existing stage particle hook sees an
+allowlisted effect name **or** an allowlisted stage caller, recorded before
+the conjunction that decides whether to null the request. The request
+register is unchanged by this record. `a` is the Hash40. `b` is
+`(signed stage16 << 48) | (flags16 << 32) | caller32`. Flags are `name-hit`
+1, `caller-allowed` 2, `stage-match` 4, and `row-off` 8. Row-off is part of
+the key, so On and Off do not collapse into one record. The key also keeps
+the caller and the live stage. The table holds 512 keys, separate from the
+fighter `TRACE_EFFECTS` table, and it is reserved at install when the marker
+is present. Only this observer takes that lock, and only with `try_lock`.
+
+A missing 119 does **not** prove the predicate did not occur. Repeats are
+not logged. A busy or poisoned dedupe lock skips that call and does not
+retry. After 512 distinct keys, new keys are dropped. A request that misses
+both the name list and the caller allowlist is not recorded. A return
+address that is missing or does not fit in `u32` is stored as `0xffffffff`,
+and every such caller collapses to that one sentinel. A stage id outside
+signed 16 bits is not recorded. Code 119 records a request observation,
+not a rendered frame.
+
+`tools/resolve_trace.py` prints and `--json`-encodes 117/118/119 beside the
+existing 110/114/116 groups. It does not merge them into those groups.
+
+What a capture can support: which registry outcome dominated on a recognized
+stage; whether a matched target was left native-hidden, left native-visible,
+or had its draw argument cleared; and which predicate bit was clear the first
+time an allowlisted particle name or caller was seen. What it cannot support:
+that those counts caused a flicker or a whiteout; that a miss happened on an
+unrecognized stage id; that every call was logged; or any frame-rate claim.
 
 ## What this plugin does not measure
 

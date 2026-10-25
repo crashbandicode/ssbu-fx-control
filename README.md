@@ -9,8 +9,9 @@ and [Skyline beta `2eb226f`][skyline] (latest checked 2026-10-25).
 
 A one-NRO Skyline plugin for **Super Smash Bros. Ultimate 13.0.5**. Set
 character effects **On**, **Off** or **Reduced** for ten fighters, or use
-**All**. Changes are visual only: gameplay, hitboxes, camera and RNG stay
-untouched ([details](docs/FX.md)).
+**All**. A second page, **Stages**, sets eleven stage backgrounds **On** or
+**Off**. Changes are visual only: gameplay, hitboxes, camera and RNG stay
+untouched ([character effects](docs/FX.md), [stages](docs/STAGES.md)).
 
 ![The FX Control page in Online Deluxe's window: Scope, All and the fighter rows, all On](docs/media/fx-control-window.png)
 
@@ -25,10 +26,11 @@ untouched ([details](docs/FX.md)).
 - A fighter without a Reduced variant (Inkling) offers On and Off only.
   Reduced never quietly means Off.
 
-## The Deluxe page
+## The Deluxe pages
 
 With [Online Deluxe](https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite)
-0.5.3 or later, the plugin has its own page. On Deluxe 0.5.6 or later:
+0.5.3 or later, the plugin has two own pages, **FX Control** and **Stages**.
+On Deluxe 0.5.6 or later:
 
 1. Hold **L+R** and tap **D-pad Down** until **FX Control** is shown.
 2. Press **Up/Down** to select a row.
@@ -40,46 +42,77 @@ With [Online Deluxe](https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-re
 
 The capture uses Scope All; the default is Online. Below the fighter rows,
 each move with variants has a row of its own.
-[The FX Control page](docs/MENU.md) lists every row and what older Deluxe
-versions support.
+[The FX Control page](docs/MENU.md) lists every fighter row and what older
+Deluxe versions support. These images are the 0.2.1 development-menu capture; they do
+not show **Stages**.
+
+**Stages** uses the same chords. Its rows are **On / Off** only. Reload the
+stage after a change. Both pages are saved from the same INI; the Stages
+page is written only by this plugin's saver.
 
 ## Coverage and defaults
 
 - **Fighters:** Captain Falcon, Ness, Lucas, Palutena, Sephiroth, Pyra,
   Mythra, Byleth, Inkling and Kirby. Other fighters' effects are untouched.
 - **Defaults:** every row On, Scope Online, variant 1 for each move.
-- **Scope:** Online applies the rows only in online play outside Training.
+- **Scope:** Online applies the fighter rows only in online play outside Training.
   Set Scope to **All** for offline matches and Training.
 - **All = Reduced** sets every fighter with a variant to Reduced and leaves
   the others On.
 
-## Status: 0.2.1, measurement first
+## Stages
 
-0.2.1 is the 0.2.0 code with the plugin SDK pinned to Deluxe 0.5.4. **No
+All eleven stages default to **On**. A stage row is **On / Off** only. It is
+not fighter **Reduced**, and it does not follow fighter Scope or All. The
+same choice applies online and offline. Reload the stage after a change.
+Use `config.ini` or the **Stages** page to change these settings.
+
+Battlefield, Small Battlefield, Final Destination, Yoshi's Story, Lylat
+Cruise, Pokemon Stadium 2, Smashville, Kalos Pokemon League, Town and City,
+Northern Cave, and Hollow Bastion.
+
+**Off** targets 47 particles on five of those stages and 18 scenery groups
+on the other six. The stage hooks run only on Smash 13.0.5. Playable
+geometry and contrast-critical backdrops stay in the game. No FPS gain is
+claimed. Names, guards, and the open per-phase, negative-control, and
+performance limits are in [Stages](docs/STAGES.md) and the
+[target inventory](docs/STAGE_TARGETS.md).
+
+## Status: 0.3.0, measurement first
+
+0.3.0 keeps the 0.2.1 fighter controls, which are the 0.2.0 code with the
+plugin SDK pinned to Deluxe 0.5.4, and adds the stage On/Off page. **No
 Reduced variant is accepted as a performance improvement yet**, and some
-appearance-chosen 0.1.x variants measured slower than On. The operator's
-testing report above is not a performance acceptance.
+appearance-chosen 0.1.x variants measured slower than On. Sampled Ally and
+Surface stage reviews leave per-phase coverage, negative controls, and
+stock-clock performance unresolved. The operator's 2026-10-25 (UTC) testing
+report above is not a performance acceptance.
 [Moves and variants](docs/FX.md#moves-and-variants) lists each move's
 variants; [HARNESS](docs/HARNESS.md) is how one is accepted.
 
 ## Install
 
-Download the [0.2.1 NRO and manifest](https://git.syntaxbyexample.com/intpa/ssbu-fx-control/releases/tag/v0.2.1).
+Download the [0.3.0 NRO and manifest](https://git.syntaxbyexample.com/intpa/ssbu-fx-control/releases/tag/v0.3.0).
 
 1. Copy `libssbu_fx_control.nro` to
    `sd:/atmosphere/contents/01006A800016E000/romfs/skyline/plugins/`.
-2. Online Deluxe is optional and only needed for the page. Without it, edit
-   `sd:/ultimate/ssbu_fx_control/config.ini`, which is created with the
-   defaults on first start; the plugin then detects online play itself
-   ([configuration](docs/CONFIGURATION.md)).
+2. Online Deluxe is optional and only needed for the two pages. Without it,
+   edit `sd:/ultimate/ssbu_fx_control/config.ini`, which is created with the
+   defaults on first start (fighters and all eleven stages On). The plugin
+   then detects online play itself for fighter Scope; stage rows do not use
+   that signal ([configuration](docs/CONFIGURATION.md)).
 3. Do not run it next to Online Deluxe 0.4.x with that version's FX row set
    to Off or Reduced: both would filter the same effects.
 
 ## Documents
 
-- [The FX Control page](docs/MENU.md): host versions, controls and every row.
+- [The FX Control page](docs/MENU.md): host versions, both pages, and every
+  fighter row.
 - [Character effects](docs/FX.md): coverage, moves and variants, who owns a
   request, the hooks.
+- [Stage backgrounds](docs/STAGES.md) and the
+  [Off-target inventory](docs/STAGE_TARGETS.md): eleven stages, On/Off,
+  13.0.5 guards, and what stays visible.
 - [Configuration](docs/CONFIGURATION.md): INI, scope and online detection,
   markers, diagnostics and event codes.
 - [Measurement harness](docs/HARNESS.md): how a variant is accepted.

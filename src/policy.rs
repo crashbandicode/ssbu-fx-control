@@ -11,10 +11,25 @@ use crate::effects;
 use crate::effects_reduced::{self, FxIntent};
 use crate::fighters::{self, Fighter, COUNT};
 use crate::moves::{self, Selection};
-use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
+use crate::stages;
+use std::sync::atomic::{AtomicU16, AtomicU64, AtomicU8, Ordering};
 
 const ANY_ACTIVE: u8 = 1;
 const ANY_REDUCED: u8 = 2;
+
+const fn initial_variants() -> [AtomicU8; moves::COUNT] {
+    let mut slots = [const { AtomicU8::new(0) }; moves::COUNT];
+    let mut index = 0;
+    while index < moves::COUNT {
+        slots[index] = AtomicU8::new(if moves::MOVES[index].variants.is_empty() {
+            0
+        } else {
+            1
+        });
+        index += 1;
+    }
+    slots
+}
 
 /// Lock-free modes read by game hooks and written by the menu thread.
 pub struct ModeTable {
@@ -27,6 +42,8 @@ pub struct ModeTable {
     /// `ANY_ACTIVE` when a row is not On, `ANY_REDUCED` when a row is Reduced.
     summary: AtomicU8,
     generation: AtomicU64,
+    /// Stage On/Off state is one atomic mask, independent of fighter summary.
+    stage_off: AtomicU16,
 }
 
 impl Default for ModeTable {
@@ -40,12 +57,13 @@ impl ModeTable {
         Self {
             modes: [const { AtomicU8::new(FxMode::On as u8) }; COUNT],
             scope: AtomicU8::new(FxScope::Online as u8),
-            variants: [const { AtomicU8::new(1) }; moves::COUNT],
+            variants: initial_variants(),
             cull_hashes: [const { AtomicU64::new(0) }; CULL_MAX],
             cull_fighters: [const { AtomicU8::new(0) }; CULL_MAX],
             cull_len: AtomicU8::new(0),
             summary: AtomicU8::new(0),
             generation: AtomicU64::new(0),
+            stage_off: AtomicU16::new(0),
         }
     }
 
@@ -55,6 +73,60 @@ impl ModeTable {
 
     pub fn scope(&self) -> FxScope {
         FxScope::from_byte(self.scope.load(Ordering::Relaxed))
+    }
+
+    pub fn stage_off_mask(&self) -> u16 {
+        self.stage_off.load(Ordering::Relaxed)
+    }
+
+    pub fn stage_mode(&self, index: usize) -> Option<FxMode> {
+        (index < stages::COUNT).then(|| {
+            if self.stage_off_mask() & (1 << index) != 0 {
+                FxMode::Off
+            } else {
+                FxMode::On
+            }
+        })
+    }
+
+    pub fn set_stage(&self, index: usize, mode: FxMode) -> bool {
+        if !stages::supported(index) || stages::accepted(mode).is_none() {
+            return false;
+        }
+        if mode == FxMode::Off {
+            self.stage_off.fetch_or(1 << index, Ordering::Release);
+        } else {
+            self.stage_off.fetch_and(!(1 << index), Ordering::Release);
+        }
+        self.generation.fetch_add(1, Ordering::AcqRel);
+        true
+    }
+
+    pub fn set_all_stages(&self, mode: FxMode) -> bool {
+        if stages::accepted(mode).is_none() {
+            return false;
+        }
+        self.stage_off.store(
+            if mode == FxMode::Off {
+                stages::SUPPORTED_MASK
+            } else {
+                0
+            },
+            Ordering::Release,
+        );
+        self.generation.fetch_add(1, Ordering::AcqRel);
+        true
+    }
+
+    pub fn stage_modes(&self) -> [FxMode; stages::COUNT] {
+        let mask = self.stage_off_mask();
+        std::array::from_fn(|index| {
+            if mask & (1 << index) != 0 {
+                FxMode::Off
+            } else {
+                FxMode::On
+            }
+        })
     }
 
     /// Bumped on every change; the persistence thread saves when it moves.
@@ -175,11 +247,21 @@ impl ModeTable {
             modes: fighters::ALL.map(|fighter| self.mode(fighter)),
             variants: self.selection(),
             cull: self.cull(),
+            stage_modes: self.stage_modes(),
         }
     }
 
     pub fn load(&self, settings: &Settings) {
         self.scope.store(settings.scope as u8, Ordering::Release);
+        let stage_off = settings
+            .stage_modes
+            .iter()
+            .enumerate()
+            .fold(0u16, |mask, (index, mode)| {
+                mask | (u16::from(*mode == FxMode::Off) << index)
+            });
+        self.stage_off
+            .store(stage_off & stages::SUPPORTED_MASK, Ordering::Release);
         for fighter in fighters::ALL {
             let mode = config::accepted(settings.mode(fighter), fighter.has_reduced())
                 .unwrap_or(FxMode::On);
@@ -269,6 +351,43 @@ mod tests {
     use super::*;
     use crate::effects::{hash40, NULL_EFFECT};
 
+    #[test]
+    fn stage_edits_persist_without_changing_fighter_policy() {
+        let table = ModeTable::new();
+        let initial = table.generation();
+        assert_eq!(table.settings(), Settings::default());
+        assert!(table.set_stage(2, FxMode::Off));
+        assert_eq!(table.stage_off_mask(), 4);
+        assert_eq!(table.stage_mode(2), Some(FxMode::Off));
+        assert_eq!(table.stage_mode(1), Some(FxMode::On));
+        assert_eq!(table.stage_mode(usize::MAX), None);
+        assert!(!table.any_active());
+        assert_eq!(table.all(), Some(FxMode::On));
+        assert_eq!(table.generation(), initial + 1);
+        assert!(!table.set_stage(usize::MAX, FxMode::Off));
+        assert!(!table.set_stage(0, FxMode::Reduced));
+        assert!(!table.set_all_stages(FxMode::Reduced));
+        assert_eq!(table.generation(), initial + 1);
+        table.set_all(FxMode::Reduced);
+        assert_eq!(table.stage_off_mask(), 4);
+        assert!(table.set_stage(0, FxMode::Off));
+        assert_eq!(table.stage_off_mask(), 5);
+        assert!(table.set_all_stages(FxMode::Off));
+        assert_eq!(table.all(), Some(FxMode::Reduced));
+        assert_eq!(table.settings().all_stages(), Some(FxMode::Off));
+        let copy = ModeTable::new();
+        copy.load(&config::parse(&config::render("", &table.settings())));
+        assert_eq!(copy.settings(), table.settings());
+        assert!(copy.set_all_stages(FxMode::On));
+        assert_eq!(copy.stage_off_mask(), 0);
+        let invalid = Settings {
+            stage_modes: [FxMode::Off; stages::COUNT],
+            ..Settings::default()
+        };
+        copy.load(&invalid);
+        assert_eq!(copy.stage_off_mask(), stages::SUPPORTED_MASK);
+    }
+
     fn fighter_ctx(kind: i32, motion: &str, status: i32) -> Context {
         Context {
             category: 0,
@@ -343,7 +462,12 @@ mod tests {
         // A retired fighter's name (Ike's Eruption pillar) belongs to nobody
         // since 0.2.0 and passes through whatever the rows say.
         let pillar = hash40("ike_firepiller02");
-        let d = decide(&table, true, pillar, Some(fighter_ctx(0x23, "special_n", 0x1dc)));
+        let d = decide(
+            &table,
+            true,
+            pillar,
+            Some(fighter_ctx(0x23, "special_n", 0x1dc)),
+        );
         assert_eq!((d.fighter, d.forwarded), (None, pillar));
         // Out of scope nothing changes.
         assert_eq!(

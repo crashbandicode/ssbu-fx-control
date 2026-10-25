@@ -20,6 +20,7 @@
 use crate::effects::hash40;
 use crate::fighters::{self, Fighter, COUNT};
 use crate::moves::{self, Selection};
+use crate::stages;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(u8)]
@@ -191,6 +192,8 @@ pub struct Settings {
     /// Reduced variant per move (`moves::MOVES` order); 0 keeps the move original.
     pub variants: Selection,
     pub cull: CullList,
+    /// Independent background modes, in Elite legal-stage order.
+    pub stage_modes: [FxMode; stages::COUNT],
 }
 
 impl Default for Settings {
@@ -200,6 +203,7 @@ impl Default for Settings {
             modes: [FxMode::On; COUNT],
             variants: moves::default_selection(),
             cull: CullList::default(),
+            stage_modes: [FxMode::On; stages::COUNT],
         }
     }
 }
@@ -213,6 +217,10 @@ impl Settings {
     pub fn all(&self) -> Option<FxMode> {
         common_mode(&self.modes, &reduced_support())
     }
+
+    pub fn all_stages(&self) -> Option<FxMode> {
+        stages::common_mode(&self.stage_modes)
+    }
 }
 
 /// Reduced support per row, in `fighters::ALL` order.
@@ -221,6 +229,7 @@ pub fn reduced_support() -> [bool; COUNT] {
 }
 
 const VARIANT_PREFIX: &str = "variant.";
+const STAGE_PREFIX: &str = "stage.";
 
 fn assignment(line: &str) -> Option<(&str, &str)> {
     let line = line.trim();
@@ -254,6 +263,17 @@ pub fn parse(text: &str) -> Settings {
                 }
             }
             "cull" => settings.cull = CullList::parse(value),
+            "stages" => {
+                if let Some(mode) = FxMode::from_token(value).and_then(stages::accepted) {
+                    for (index, slot) in settings.stage_modes.iter_mut().enumerate() {
+                        *slot = if stages::supported(index) {
+                            mode
+                        } else {
+                            FxMode::On
+                        };
+                    }
+                }
+            }
             _ => {}
         }
     }
@@ -263,6 +283,12 @@ pub fn parse(text: &str) -> Settings {
                 FxMode::from_token(value).and_then(|mode| accepted(mode, fighter.has_reduced()))
             {
                 settings.modes[fighter.index()] = mode;
+            }
+        } else if let Some(index) = key.strip_prefix(STAGE_PREFIX).and_then(stages::by_key) {
+            if let Some(mode) = FxMode::from_token(value).and_then(stages::accepted) {
+                if stages::supported(index) {
+                    settings.stage_modes[index] = mode;
+                }
             }
         } else if let Some(id) = key.strip_prefix(VARIANT_PREFIX) {
             if let Some(index) = moves::by_id(id) {
@@ -283,6 +309,9 @@ const HEADER: &str = "# ssbu-fx-control. Values: on | off | reduced. scope: onli
 # variant.<move>=N selects a Reduced variant per move (0 = original); the
 # default (variant 1) is not written. cull=<name>,<name> is the measurement
 # harness: extra requests nulled while that fighter is Reduced.
+# stages=on|off is separate from the fighter All key. stage.<key>=on|off overrides
+# stages in any order. Stage controls apply offline and online, ignoring scope.
+# All eleven legal stages offer On/Off. Reload the stage after background edits.
 ";
 
 /// Renders `settings` over `existing`: known keys are rewritten in place (the
@@ -295,7 +324,11 @@ pub fn render(existing: &str, settings: &Settings) -> String {
         match key {
             "scope" => Some(Some(settings.scope.token().to_owned())),
             "all" => Some(all.map(|mode| mode.token().to_owned())),
+            "stages" => Some(settings.all_stages().map(|mode| mode.token().to_owned())),
             _ => {
+                if let Some(index) = key.strip_prefix(STAGE_PREFIX).and_then(stages::by_key) {
+                    return Some(Some(settings.stage_modes[index].token().to_owned()));
+                }
                 if let Some(fighter) = Fighter::from_id(key) {
                     return Some(Some(settings.mode(fighter).token().to_owned()));
                 }
@@ -340,6 +373,13 @@ pub fn render(existing: &str, settings: &Settings) -> String {
         .into_iter()
         .chain(fighters::ALL.iter().map(|fighter| fighter.id()))
         .chain(variant_keys.iter().map(String::as_str));
+    let stage_keys: Vec<String> = stages::ALL
+        .iter()
+        .map(|stage| format!("{STAGE_PREFIX}{}", stage.key))
+        .collect();
+    let order = order
+        .chain(["stages"])
+        .chain(stage_keys.iter().map(String::as_str));
     for key in order {
         if written.iter().any(|done| done == key) {
             continue;
@@ -354,6 +394,42 @@ pub fn render(existing: &str, settings: &Settings) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stage_settings_are_independent_override_their_all_and_round_trip() {
+        let settings = parse("stage.end=on\nstages=off\nall=reduced\n");
+        assert_eq!(settings.stage_modes[2], FxMode::On);
+        for (index, mode) in settings.stage_modes.iter().enumerate() {
+            assert_eq!(
+                *mode,
+                if stages::supported(index) && index != 2 {
+                    FxMode::Off
+                } else {
+                    FxMode::On
+                }
+            );
+        }
+        assert_eq!(settings.all_stages(), None);
+        assert_eq!(settings.all(), Some(FxMode::Reduced));
+        let existing = "# keep\nstage.future_stage=off\nstage.end=off\nstage.end=on\nstages=off\n";
+        let rendered = render(existing, &settings);
+        assert!(rendered.contains("# keep\nstage.future_stage=off\n"));
+        assert_eq!(rendered.matches("stage.end=").count(), 1);
+        assert!(!rendered.lines().any(|line| line.starts_with("stages=")));
+        assert_eq!(parse(&rendered), settings);
+        assert_eq!(render(&rendered, &settings), rendered);
+        assert_eq!(parse("all=off\n").stage_modes, [FxMode::On; stages::COUNT]);
+        assert_eq!(parse("stages=off\n").modes, [FxMode::On; COUNT]);
+        let models = parse("stage.battle_field=off\nstage.poke_kalos=off\n");
+        assert_eq!(models.stage_modes[0], FxMode::Off);
+        assert_eq!(models.stage_modes[7], FxMode::Off);
+        assert_eq!(parse(&render("", &models)), models);
+        assert_eq!(models.modes, Settings::default().modes);
+        assert_eq!(
+            parse("stages=reduced\nstage.end=reduced\n").stage_modes,
+            [FxMode::On; stages::COUNT]
+        );
+    }
 
     #[test]
     fn defaults_are_everything_on_and_online_scope() {
@@ -420,7 +496,10 @@ mod tests {
         assert_eq!(settings.mode(Fighter::Pyra), FxMode::Off);
         assert_eq!(settings.scope, FxScope::Online);
         // A 0.1.x line for a retired fighter is an unknown key: ignored and kept.
-        assert_eq!(settings, parse(existing.replace("kazuya=off\n", "").as_str()));
+        assert_eq!(
+            settings,
+            parse(existing.replace("kazuya=off\n", "").as_str())
+        );
         let out = render(existing, &settings);
         assert!(out.starts_with("# my notes\nfuture_key=7\n"));
         assert!(out.contains("\n; other\n"));

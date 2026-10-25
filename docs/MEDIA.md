@@ -18,7 +18,11 @@ Deluxe, were tested in Eden and on an Erista Switch without issues observed.
 - It is not a performance acceptance. No Reduced variant is accepted yet;
   acceptance follows [HARNESS](HARNESS.md) and is recorded per move in
   [Moves and variants](FX.md#moves-and-variants).
-- It is separate from the media below, which show the menu only.
+- It does not close the stage limits in
+  [STAGES](STAGES.md#remaining-runtime-acceptance): per-phase coverage,
+  negative controls, and stock-clock performance remain unresolved.
+- It is separate from the media below, which show the FX Control menu only.
+  This repository has no Stages-page capture.
 
 ## Files
 
@@ -62,9 +66,9 @@ refresh.
   `0.2.1-0c0d7e62c9d0-dirty-1792682041`, NRO SHA-256
   `8bf2bdb451266feba0e57a6b6996aceaf334b9cf190add0e8219aa9d8e1efdd8`.
   It was built from a working tree with uncommitted changes on top of
-  `0c0d7e6`. It is **not** the clean 0.2.1 release, and those uncommitted
-  changes are not part of this branch. The rows visible in the images (Scope,
-  All and the first eight fighters) match this branch's page order.
+  `0c0d7e6`. It is **not** the clean 0.2.1 release, and it is **not** a 0.3.0
+  capture. The images show the FX Control page only. The rows visible there
+  (Scope, All and the first eight fighters) match that page's order.
 - **Eden:** the running binary reports commit
   `10bcd2d849843b146a79c61a21df615e1bdcfcde`, SHA-256
   `64cf47519891440f4a5adfe4d3dfeff180fa4d90b61eb424ee1550e2a3fc3004`.

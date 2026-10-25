@@ -7,7 +7,8 @@ Off's frame-time stability; a visible change alone does not establish that
 benefit ([performance method](FX_PERFORMANCE_METHOD.md)).
 
 This policy is Online Deluxe's character-FX feature, moved into its own
-plugin. The Off tables, the request classification (`effects_reduced::classify`,
+plugin. Stage backgrounds are a separate On/Off policy on the same NRO and
+are not fighter Reduced variants ([stage backgrounds](STAGES.md)). The Off tables, the request classification (`effects_reduced::classify`,
 `request_hash`) and the hooks are ported from
 `intpa/ssbu-online-deluxe-rewrite` at `f3fe436`. What changed is the mode:
 Deluxe had one global FX mode; this plugin has one per covered fighter, and
@@ -185,9 +186,11 @@ Off/On, Sephiroth neutral-B suppression, the Reduced families in the
 Deluxe 0.5.0 builds for the per-move captures in the quota section of the
 [emulator results](FX_EMULATOR_RESULTS.md). 0.2.0 has **no recorded runtime
 acceptance of its own yet**: its per-move variants, the descriptor version 4
-page and the plugin's own online hooks are host-tested. The operator has since
-reported testing in Eden and on an Erista Switch without issues observed; that
-report carries no build or scenario list and accepts no variant
+page and the plugin's own online hooks are host-tested. On 2026-10-25 (UTC)
+the operator reported testing in Eden and on an Erista Switch without issues
+observed. That report carries no build or scenario list, accepts no Reduced
+variant, and does not close the stage limits in
+[STAGES](STAGES.md#remaining-runtime-acceptance)
 ([operator-reported testing](MEDIA.md#operator-reported-testing)).
 
 ## Reduced implementation

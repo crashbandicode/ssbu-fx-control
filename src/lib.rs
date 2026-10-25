@@ -18,6 +18,10 @@ pub mod moves;
 pub mod persist;
 pub mod policy;
 pub mod scope;
+pub mod stage_diag;
+pub mod stage_menu;
+pub mod stage_models;
+pub mod stages;
 pub mod trace;
 
 pub mod build_info {

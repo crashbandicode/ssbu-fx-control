@@ -1030,7 +1030,13 @@ mod tests {
         assert!(global(hash40("inkling_splash")));
         assert!(!global(hash40("inkling_blaster")));
         // Retired 0.1.x fighters: no Off table any more.
-        for name in ["ganon_sword_flare", "demon_smash_arc", "ike_volcano", "roy_eruption", "chrom_volcano_a"] {
+        for name in [
+            "ganon_sword_flare",
+            "demon_smash_arc",
+            "ike_volcano",
+            "roy_eruption",
+            "chrom_volcano_a",
+        ] {
             assert!(!global(hash40(name)), "{name}");
             assert!(!needs_context(hash40(name)), "{name}");
         }
