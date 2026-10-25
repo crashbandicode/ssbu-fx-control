@@ -1,16 +1,20 @@
-# Stage background visuals — unreleased candidate
+# Stage background visuals
 
 The same FX Control NRO registers a second Deluxe own page, **Stages**
 (`fx_control_stages`). It lists Elite Legal Stages' eleven normal stages.
 Elite is only the list source; this plugin neither requires nor changes it.
+
+These controls ship in **0.3.0**, retaining the runtime source of the Surface-tested
+`8bf2bdb4…` candidate. The later [operator testing report](MEDIA.md#operator-reported-testing)
+is separate from the dated, scenario-specific evidence below.
 
 **All eleven stages have an On/Off target:** 47 particle handles on five stages,
 plus 18 selected scenery model groups on the other six. This is selective visual
 suppression, not removal of every background component. Stage simulation,
 playable geometry, unknown groups, animation and resource lifetime remain native.
 Ally screenshot samples have exposed contrast-critical backdrops, which remain
-native. See the runtime review below; complete phase coverage and particle
-suppression efficacy remain unverified. No stock-clock FPS improvement is claimed.
+native. See the runtime review below; complete phase coverage and per-emitter
+visual effectiveness remain unverified. No stock-clock FPS improvement is claimed.
 The complete [Off-target review inventory](STAGE_TARGETS.md) lists every particle
 name, full model-folder hash, mesh/material label and preserved example, with
 per-target columns for later in-game review.

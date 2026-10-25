@@ -1,10 +1,10 @@
 [package]
 name = "ssbu-fx-control"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 publish = false
 build = "build.rs"
-description = "Per-fighter character effect control (On / Off / Reduced) for Smash Ultimate 13.0.5 with measured per-move Reduced variants, as one Skyline NRO."
+description = "Per-fighter character effect control (On / Off / Reduced) and stage background visuals (On / Off) for Smash Ultimate 13.0.5, with measured per-move Reduced variants, as one Skyline NRO."
 
 [package.metadata.skyline]
 titleid = "01006A800016E000"

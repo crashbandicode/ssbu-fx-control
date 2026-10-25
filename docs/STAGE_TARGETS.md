@@ -1,8 +1,8 @@
 # Stage background targets — review inventory
 
 This is the complete list of what a stage row set to **Off** asks the game not
-to draw, alongside reviewed groups now preserved for contrast. This is an
-unreleased candidate: **sampled visibility is not full runtime acceptance**.
+to draw, alongside reviewed groups now preserved for contrast.
+**Sampled visibility is not full runtime acceptance.**
 Nothing here claims a measured FPS benefit or complete background
 removal; unlisted scenery, stage simulation, playable geometry, hazards and
 animation stay native. Runtime architecture, hooks and trace events are in

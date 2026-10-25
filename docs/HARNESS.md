@@ -57,7 +57,8 @@ accepts one.
    variant row (Deluxe page, or `variant.<move>=n` in the INI), capture,
    analyse; repeat per variant without leaving Training: the row applies at
    once. In Training Deluxe 0.5.3 needs **ZR held** with Left/Right for any
-   edit in its window (a plain press is ignored; ZL + D-pad swaps the
+   edit in its window, and 0.5.6 or later in every scene (a plain press is
+   ignored; ZL + D-pad swaps the
    controlled fighter in Training). Where a candidate is close, bisect with `cull=` (below) before
    adding a new variant.
 4. **Record.** Ledger row per move and variant; `status` in `moves.rs`
@@ -71,7 +72,7 @@ accepts one.
 | --- | --- | --- |
 | `variant.<move>=N` | `config.ini`, or the move's row on the Deluxe page | Selects the Reduced variant per move (0 = original). Written by the plugin only when not the default. |
 | `cull=<name>,<name>` | `config.ini` | Up to 16 extra request names (with a covered fighter's prefix) nulled while that fighter's row is Reduced and the scope allows. Bisection tool: null one more layer without editing the tables. Read at start; never rewritten. |
-| `TRACE_EFFECTS` | marker file in `sd:/ultimate/ssbu_fx_control/` | Latched at start. Every EffectModule `req*` hook records the first time it sees each (name, actor category, kind, status) as event code 110, up to 512 keys per boot. `tools/resolve_trace.py events.log` prints the names per actor kind (names from `reference/effect_names.txt`; regenerate with `tools/export_effect_names.py`, add script names by hand under `# manual`). |
+| `TRACE_EFFECTS` | marker file in `sd:/ultimate/ssbu_fx_control/` | Latched at start. Every EffectModule `req*` hook records the first time it sees each (name, actor category, kind, status) as event code 110, up to 512 keys per boot. The same marker records stage particle code 114 and scenery-group code 116. `tools/resolve_trace.py events.log` prints the names per actor kind (names from `reference/effect_names.txt`; regenerate with `tools/export_effect_names.py`, add script names by hand under `# manual`). |
 | `TRACE_STAGE_DIAGNOSTICS` | marker file in the same directory | Latched once when stage hooks install. Codes 117, 118 and 119. Independent of `TRACE_EFFECTS` and of stage On/Off. Absent file keeps the previous stage hot path. |
 
 The trace reads the actor's kind, motion and status for every request while
@@ -103,7 +104,7 @@ active, are not stored.
 
 Lookup reasons, one per call that reaches the registry read: `1 found`,
 `2 unregistered`, `3 ambiguous` (the stored path is 0), `4 contended`
-(`try_lock` failed; the registry is not disabled), `5 disabled` (null
+(`try_read` failed on that bucket; the registry is not disabled), `5 disabled` (null
 renderer, unhealthy registry, or poisoned lock). A found path also gets
 exactly one result reason: `6 requested-native-hidden`, `7 native-visible`,
 `8 suppressed`, `9 wrong-vtable`, `10 wrong-stage`. `found` equals the sum of
@@ -130,8 +131,8 @@ retry. After 512 distinct keys, new keys are dropped. A request that misses
 both the name list and the caller allowlist is not recorded. A return
 address that is missing or does not fit in `u32` is stored as `0xffffffff`,
 and every such caller collapses to that one sentinel. A stage id outside
-signed 16 bits is not recorded. Code 119 is still a count of observed calls,
-not of frames.
+signed 16 bits is not recorded. Code 119 records a request observation,
+not a rendered frame.
 
 `tools/resolve_trace.py` prints and `--json`-encodes 117/118/119 beside the
 existing 110/114/116 groups. It does not merge them into those groups.
