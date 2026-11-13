@@ -1,6 +1,8 @@
 # ssbu-fx-control
 
-> AI-assisted, human-directed and reviewed.
+> **Disclaimer:** this project was developed with the assistance of AI
+> (Claude, Codex and other coding agents) under the operator's direction and
+> review. Nothing is claimed beyond the dated tests cited in its docs.
 
 A one-NRO Skyline plugin for **Super Smash Bros. Ultimate 13.0.5** that
 turns down visual effects for ten fighters and eleven stages. It only changes
