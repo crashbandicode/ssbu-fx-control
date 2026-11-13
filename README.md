@@ -70,4 +70,4 @@ Build with `cargo skyline build --release` (or `tools/Build.ps1`); the NRO is
 `target/aarch64-skyline-switch/release/libssbu_fx_control.nro`. Test with
 `cargo test`.
 
-License: the repository has no license file.
+License: MIT; see [LICENSE](LICENSE).

@@ -38,5 +38,5 @@ timing capture (`api_trace`, `CAPTURE_TIMING`).
 ## Not included
 
 No Nintendo game assets, decompiled game code or closed host NROs are
-included. The repository has no license file, and `Cargo.toml` declares no
-`license` field.
+included. The repository is under the MIT License ([LICENSE](../LICENSE));
+`Cargo.toml` declares no `license` field.
