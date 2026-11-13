@@ -88,13 +88,14 @@ build ID `21450c647b8c5940ed5b68218ea128fd3c5d597d000000000000000000000000`.
   argument block.
 - **Caller audits.** Surface code 119 observed all five FD names here with
   name/stage/Off true but the former caller gate false. Static bytes and
-  runtime evidence are separated in external
-  `fx-surface-1022/fd-caller-audit/REPORT.md` (ordinary Capstone analysis, not
-  REA). Lylat code 119 then identified `0x25f0f1c`: its `bl` at `0x25f0f18` is
-  the indexed sibling using the same stage-slot list, filler and request block.
-  Its narrow audit is `fx-surface-1022/particle-followup/REPORT.md`; neighboring
-  returns `0x25f0bc0`/`0x25f0dd4` remain excluded. No additional effect names
-  were added.
+  runtime evidence were separated in an external caller audit (ordinary
+  Capstone analysis, not REA). Lylat code 119 then identified `0x25f0f1c`: its
+  `bl` at `0x25f0f18` is the indexed sibling using the same stage-slot list,
+  filler and request block. Neighboring returns `0x25f0bc0`/`0x25f0dd4` remain
+  excluded (`stages::tests`). No additional effect names were added. The two
+  audit reports (`fd-caller-audit/REPORT.md`, `particle-followup/REPORT.md`)
+  are not in the Surface run folder `/home/intpa/fxs1022/` and were not found
+  on the Surface, Yoga or XPS on 2026-11-13.
 - **Stage ID.** `_ZN3app14sv_information8stage_idEv` checks the absent
   singleton/inactive-stage sentinel and returns −1; only the exact normal stage
   ID for that name qualifies. Unknown IDs and other stage/name pairs pass
@@ -109,9 +110,10 @@ build ID `21450c647b8c5940ed5b68218ea128fd3c5d597d000000000000000000000000`.
   sites are unchanged. No ARCropolis callbacks or stage-asset rewriting are
   introduced.
 
-Static evidence/receipts are archived outside the repo under
+Static evidence/receipts were archived outside the repo under
 `plugin-api-tangent-20261012/stage-background-1021/`: `RESOURCE-CENSUS.json`,
 `STATIC-BOUNDARY.json`, analysis scripts, package extracts and the task plan.
+That folder was not found on the Surface, Yoga or XPS on 2026-11-13.
 
 ## Model-render boundary (13.0.5 only)
 
@@ -164,7 +166,8 @@ its six rows and the bulk All control, while the particle rows remain usable.
 
 ### Model evidence
 
-Stock model evidence is under external `stage-background-remaining-1021/`:
+Stock model evidence was kept under external `stage-background-remaining-1021/`
+(not found on the Surface, Yoga or XPS on 2026-11-13):
 `MODEL-INVENTORY.md`, two ARC hierarchy inventories, `PARSED-MODELS.json` (218)
 and `PARSED-BATTLEFIELD-MODELS.json` (38), and `MODEL-TARGETS.json`. A bounded
 SearchLookup walk extracted only small MODL/material descriptors; ssbh_lib 0.19.0
@@ -209,10 +212,10 @@ path); game hooks and menu callbacks perform no file I/O.
 
 ## Runtime history
 
-Dated, scenario-specific emulator evidence. It is separate from the later
-[operator testing report](MEDIA.md#operator-reported-testing), and none of it is
-Switch or performance evidence. 0.3.0 retains the runtime source of the
-Surface-tested `8bf2bdb4…` candidate.
+Dated, scenario-specific emulator evidence. None of it is Switch or
+performance evidence ([testing status](MEDIA.md#testing-status)). 0.3.0
+retains the runtime source of the Surface-tested `8bf2bdb4…` candidate (0.3.0
+release manifest).
 
 ### Summary by stage
 
@@ -242,7 +245,8 @@ per-emitter visual effectiveness remain unverified.
 ### Ally visibility review — 2026-10-21/22
 
 External evidence: `plugin-api-tangent-20261012/stage-playability-ally-1021/RESULTS.md`
-and its screenshot prefixes. Normal forms, Training, fixed-camera On/Off/On
+and its screenshot prefixes (not found on the Surface, Yoga or XPS on
+2026-11-13; the Ally was not searched). Normal forms, Training, fixed-camera On/Off/On
 reloads, SSBU 13.0.5 on Eden/AMD. The original eight plugins remain installed.
 
 - **Battlefield forms.** Baseline 29 targets caused reversible whiteout.
@@ -276,9 +280,11 @@ reloads, SSBU 13.0.5 on Eden/AMD. The original eight plugins remain installed.
 
 ### Surface correction review — 2026-10-22
 
-External evidence: `plugin-api-tangent-20261012/fx-surface-1022/`, including
-immutable source/NRO/ELF manifests, event logs, input receipts and moving
-captures. Normal stages in Training, SSBU 13.0.5 on Eden/NVIDIA, isolated
+External evidence: the Surface run folder `/home/intpa/fxs1022/`: an install
+receipt per build below (`INSTALL.json` for the original, `<LABEL>-INSTALL.json`
+for the others, each with the NRO SHA-256 and Deluxe `2f5a1d4e…`),
+`runs/<label>/` with logs, screenshots and captures, and `evidence/<label>.zip`
+(checked 2026-11-13). Normal stages in Training, SSBU 13.0.5 on Eden/NVIDIA, isolated
 profile with only Deluxe `2f5a1d4e...` and FX. No Training Modpack or ARCmods.
 These are not Switch tests or performance measurements; 200-image MJPEG samples
 are captured images, not emulated-frame counts.

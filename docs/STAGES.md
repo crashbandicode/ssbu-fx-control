@@ -7,8 +7,8 @@ plugin neither requires nor changes it.
 
 ![Smashville On above Off: village scenery disappears while the blue sky, fighters and playable platform remain](media/smashville-on-off.jpg)
 
-*Smashville On (top) and Off (bottom): two separate 2026-10-22 development
-captures, not frame-matched and not the 0.3.0 binary.
+*Smashville On (top) and Off (bottom): two separate Eden captures, 2026-10-22,
+development build `39744aa9…`, not frame-matched and not the 0.3.0 binary.
 [Media notes](MEDIA.md#smashville-on-off-comparison)*
 
 [What Off hides](#what-off-hides) · [Using the rows](#using-the-rows) ·
@@ -80,5 +80,4 @@ Still open for all eleven stages: traced On / Off / On reloads, gameplay and
 negative-control checks, every phase and transformation, and untraced
 stock-clock performance captures
 ([checklist](STAGE_REFERENCE.md#acceptance-checklist)). None of this is Switch
-evidence; the later [operator testing report](MEDIA.md#operator-reported-testing)
-is separate.
+evidence ([testing status](MEDIA.md#testing-status)).

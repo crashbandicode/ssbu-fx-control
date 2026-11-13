@@ -11,7 +11,7 @@ All files live in `sd:/ultimate/ssbu_fx_control/`: `config.ini`, optional
 
 ## config.ini
 
-First start writes the defaults from
+First start writes the default settings, the same values as
 [`config/default.ini`](../config/default.ini): Scope Online, every fighter and
 stage On, variant 1 where a variant exists, and no cull list. Hand edits take
 effect on the next game start; an unreadable file is left untouched and the
@@ -71,7 +71,8 @@ stage.animal_village=off
 - A fighter line always beats `all=`, and a stage line beats `stages=`,
   whatever the line order.
 - Unknown keys, comments and bad lines are ignored on load and kept on
-  rewrite. A bad value keeps that row's default.
+  rewrite. A bad value is ignored: the row keeps what `all=` or
+  `stages=` set, or its default.
 - `reduced` on Inkling is ignored (the row stays On), and stage rows ignore
   `reduced`.
 
@@ -91,7 +92,8 @@ edits are saved. Both keep the previous file as `config.previous.ini`.
 `scope=all` applies fighter rows everywhere; `scope=online` (default) only in
 online play outside Training. Stage rows ignore Scope.
 
-- **Deluxe 0.5.0 or later** supplies the online signal.
+- **Deluxe 0.5.0 or later** supplies the online signal; it counts Quickplay,
+  Arena and local wireless as online.
 - **No Deluxe** (and no legacy SsbuSync host): the plugin's own hooks mark a
   match online about three seconds after its stage loads, so those first
   seconds keep full fighter effects. If those hooks are refused, Scope

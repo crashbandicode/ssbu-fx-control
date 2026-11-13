@@ -8,9 +8,9 @@ window: **FX Control** for fighters and **Stages** for
 
 ![Captain Falcon's row going from On to Off to Reduced and back to On, with All showing Unavailable while the rows differ](media/fx-control-edit.gif)
 
-*Captain Falcon On → Off → Reduced → On. 0.2.1 development capture with
-Scope All, the capture fixture's setting; the shipped default is Online.
-Recorded on released Deluxe 0.7.0
+*Captain Falcon On → Off → Reduced → On. Eden, 2026-10-24, development build
+`8bf2bdb4…` (0.2.1 plus the stage changes), with Scope All, the capture
+fixture's setting; the shipped default is Online. Recorded on released Deluxe 0.7.0
 ([capture identity](MEDIA_REFERENCE.md#menu-capture-identity)).
 [Media notes](MEDIA.md#menu-demo)*
 
@@ -37,7 +37,8 @@ Both pages use plugin descriptor version 4 (SDK pinned to Deluxe 0.5.4,
 | 0.5.0 to 0.5.2 | None (version 4 refused) | Online signal; settings follow the INI |
 | 0.5.3 or later | Both | Adds the variant rows (plugin API v4) |
 | 0.5.6 or later | Both | Values change only while **ZR** is held and **ZL** released, in every scene; a plain Left/Right is ignored |
-| 0.6.0 or later | Both | Window Options' OwnPages row can take either page out of the L+R+Down cycle |
+| 0.6.0 to 0.9.0 | Both | Window Options' OwnPages row takes both pages out of the L+R+Down cycle together |
+| 0.10.0 or later | Both | Window Options has one row per page (FX Control, Stages), so either page can leave the cycle on its own |
 
 ## Rows
 

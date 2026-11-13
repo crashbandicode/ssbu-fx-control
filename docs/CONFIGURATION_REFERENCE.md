@@ -61,7 +61,8 @@ stage.end=on
   every page fighter has the same value; while the rows differ the plugin
   removes the line rather than leave a wrong one.
 - Unknown keys, comments and lines that do not parse are ignored on load and
-  kept when the plugin rewrites the file. A bad value keeps that row's default.
+  kept when the plugin rewrites the file. A bad value is ignored: the row keeps
+  what `all=` or `stages=` set, or its default.
 - Fighter lines exist only for the ten fighters that have a move on the ledger
   and a row on the Deluxe page (`fighters::ALL`). A line for another fighter
   (for example `kazuya=off` from an older file) is ignored on load and kept
@@ -101,8 +102,10 @@ Deluxe's background thread). Editing **All** changes every row, which the host
 cannot express, so the plugin's own background thread rewrites the whole file
 after any change once the table has been quiet for two seconds. The delay
 coalesces edits; the plugin's write contains the complete state. Both writers
-replace the file atomically (temporary file, then rename) and keep the
-previous version as `config.previous.ini`.
+use the same replacement (`config_store.rs` in each repository): write
+`config.tmp`, move the current file to `config.previous.ini`, then rename the
+temporary file into place. The file is briefly absent between the two renames;
+a load that finds only `config.previous.ini` restores it first.
 
 The **Stages** page sets every row `no_persist` and registers no host config
 path. Its edits are saved only by the plugin's quiet-period saver, including
@@ -117,7 +120,7 @@ what else is installed:
 
 | Installed | Online signal | Scope row |
 | --- | --- | --- |
-| Online Deluxe 0.5.0 or later | Deluxe's `ssbu_online_deluxe_online_context_v1` export: its `ONLINE` bit, and `is_training_mode()` false | Online / All (the page, and so the row, exists on 0.5.3 or later; 0.5.0 to 0.5.2 refuse the registration) |
+| Online Deluxe 0.5.0 or later | Deluxe's `ssbu_online_deluxe_online_context_v1` export: its `ONLINE` bit (set for Quickplay, Arena and local wireless, or once Deluxe's latency hook reached the match), and `is_training_mode()` false | Online / All (the page, and so the row, exists on 0.5.3 or later; 0.5.0 to 0.5.2 refuse the registration) |
 | No Deluxe, no legacy SsbuSync host | The plugin's own mark-only hooks: the online-latency setup (`0x16ccab8`) marks a match online; every stage load (`0x25d9288`) clears the mark | (no Deluxe window) |
 | Deluxe older than 0.5.0, or a legacy SsbuSync host | None. The plugin does not hook the latency site the host already hooks. **Scope Online never applies**: effects stay original until `scope=all` is set in the INI. | (no page: an old Deluxe refuses the registration) |
 | No host, but the own hooks were refused (unexpected instruction words) | None. Scope Online never applies (Deluxe's conservative choice). Scope All still works. | (no Deluxe window) |

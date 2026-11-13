@@ -2,8 +2,9 @@
 
 Measure each move's numbered Reduced variants on console while keeping its
 gameplay cue. Visual simplification alone is not a performance result.
-Candidates live in `src/moves.rs`; measurements go in the operator's
-`MOVE-LEDGER.md`.
+Candidates live in `src/moves.rs`; measurements go in the move ledger,
+`MOVE-LEDGER.md`, kept outside the repository (it was not found on the
+Surface, Yoga or XPS on 2026-11-13).
 
 **Status: no Reduced variant is accepted yet.** Every variant is a
 `Candidate`.

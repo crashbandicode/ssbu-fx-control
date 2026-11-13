@@ -98,7 +98,7 @@ expensive work.
 
 ### Critical-zoom reproduction
 
-The operator clarified that the spike may occur during
+A reported spike may occur during
 [Special Zoom](https://www.ssbwiki.com/Special_Zoom), not only on the red
 final-stock finishing screen. Ordinary attack captures do not establish
 critical-zoom coverage.

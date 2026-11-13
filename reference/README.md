@@ -15,7 +15,7 @@ transform, hooks, host tests, generator and the two policy ledgers. Deluxe
 | --- | --- |
 | `fx-policy.json` | Kept as imported: initial Off targets with source file and line |
 | `fx-expanded-policy.json` | Kept as imported: expanded targets, move qualifications and the 41 excluded cues |
-| EFF-sibling transform, host tests, generator | Removed in 0.2.0; on branch `archive/0.1.x-appearance-variants` |
+| EFF-sibling transform, host tests, generator | Removed in 0.2.0 (`499ba8f`, `857805d`); in the history before them, for example tag `v0.1.0` |
 
 Not ported from Deluxe: the scene tracker and its hooks, the input-buffer
 write in the online-latency hook, the render profiles, the overlay and the
@@ -30,8 +30,8 @@ timing capture (`api_trace`, `CAPTURE_TIMING`).
 - **WuBoytH/SSBU-Dumped-Scripts,** commit
   `59004685238a3f6f93bae905d3a4e079701c40b4`: move layers and variant cull
   names in `src/moves.rs` are parent requests at this pin (`moves::PIN`).
-  The 0.1.x keep/cull families and their generator are on branch
-  `archive/0.1.x-appearance-variants`.
+  The 0.1.x keep/cull families and their generator are in the history before
+  `499ba8f`, for example tag `v0.1.0`.
 
 `effect_names.txt` is the generated name list for `tools/resolve_trace.py`.
 

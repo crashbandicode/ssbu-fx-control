@@ -7,9 +7,7 @@ FX row, before the feature moved into this plugin. ssbu-fx-control runs the
 same request pipeline and Off tables per fighter; the Reduced keep/cull
 tables behind these rows were replaced in 0.2.0 by the per-move variants of
 `src/moves.rs`. None of these checks has been repeated with a ssbu-fx-control
-NRO yet, and the current
-[operator-reported testing](MEDIA.md#operator-reported-testing) names no
-build.
+NRO yet ([testing status](MEDIA.md#testing-status)).
 
 Implementation coverage and runtime acceptance are separate. Reduced changes
 specific visual layers, not every move a character can perform. Performance
@@ -21,7 +19,7 @@ matter; later builds are not automatically retested.
 | --- | --- |
 | [Keep/cull table replaced by `src/moves.rs` variants](#replaced-by-per-move-variants) | 7 |
 | [Cull set with no `src/moves.rs` entry](#no-entry-in-src-moves-rs); Reduced classifies only through `moves::layer`, so it does not apply them | 4 |
-| [Code removed](#removed-in-0-2-0); it survives only on the branch `archive/0.1.x-appearance-variants` | 9 |
+| [Code removed](#removed-in-0-2-0); it survives only in the history before `857805d`, for example tag `v0.1.0` | 9 |
 
 ## Replaced by per-move variants
 
@@ -201,5 +199,6 @@ successful menu change is not proof that the intended effect hook ran.
 Concurrent-instance captures are visual checks only; paused images do not
 establish frame-time gains.
 
-The 24e family captures and request traces are archived with a SHA-256
-manifest at `~/.local/share/ssbu-mod-backups/fx-families-24e-20261008/`.
+The 24e family captures and request traces were archived with a SHA-256
+manifest at `~/.local/share/ssbu-mod-backups/fx-families-24e-20261008/`. That
+folder was not found on the Surface, Yoga or XPS on 2026-11-13.

@@ -3,21 +3,20 @@
 > AI-assisted, human-directed and reviewed.
 
 A one-NRO Skyline plugin for **Super Smash Bros. Ultimate 13.0.5** that
-turns down visual effects for ten fighters and eleven stages. Gameplay,
-hitboxes, camera and RNG are untouched.
+turns down visual effects for ten fighters and eleven stages. It only changes
+what is drawn: hitboxes, gameplay and the camera stay as they are.
 
 **[Download 0.3.0](https://git.syntaxbyexample.com/intpa/ssbu-fx-control/releases/tag/v0.3.0)**
 
-Tested in **Eden** and on an **Erista Switch** without issues observed, with
-[firmware 23.0.1][firmware], [Atmosphère 1.12.1][atmosphere] and
-[Skyline beta `2eb226f`][skyline] (checked 2026-10-25).
-[Testing notes](docs/MEDIA.md)
+Tested in **Eden** only. No Switch test of 0.3.0 is recorded, and the plugin
+was not installed on the test Switch as of 2026-11-12.
+[Testing status](docs/MEDIA.md#testing-status)
 
 ## Fighter effects
 
 ![Palutena's Autoreticle with effects On above Off: the cyan staff glow disappears while the targeting reticle and hits remain](docs/media/palutena-autoreticle-on-off.webp)
 
-*Palutena Autoreticle, On / Off. Archived FX 0.1.0 footage. [Capture notes](docs/MEDIA.md#fighter-comparison)*
+*Palutena Autoreticle, On above Off. Eden, 2026-10-14, FX Control 0.1.0 (`eb627b8`). [Capture notes](docs/MEDIA.md#fighter-comparison)*
 
 Each fighter is **On** (default), **Off** or **Reduced**. Reduced keeps the
 cue that shows what a move does; a fighter without a variant offers On and
@@ -29,7 +28,7 @@ matches and Training. Variants are not yet proven to raise FPS.
 
 ![Smashville On above Off: village scenery disappears while the blue sky, fighters and playable platform remain](docs/media/smashville-on-off.jpg)
 
-*Separate On/Off development captures, 2026-10-22. [Media notes](docs/MEDIA.md#smashville-on-off-comparison)*
+*Smashville On above Off. Eden, 2026-10-22, development build `39744aa9…` (before 0.3.0). [Media notes](docs/MEDIA.md#smashville-on-off-comparison)*
 
 Each stage is **On** (default) or **Off**; there is no Reduced. Stage rows
 apply online and offline, separately from fighter Scope and All. Reload the
@@ -57,16 +56,16 @@ With [Online Deluxe](https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-re
 2. Online Deluxe is optional. Without it, edit
    `sd:/ultimate/ssbu_fx_control/config.ini`, created on first start
    ([configuration](docs/CONFIGURATION.md)).
-3. Don't pair it with Online Deluxe 0.4.x while that version's FX row is
-   Off or Reduced.
+3. Don't use it with an Online Deluxe older than 0.5.0: those versions
+   have character-effect hooks of their own.
 
 ## More
 
 [Stage targets](docs/STAGE_TARGETS.md) · [Measurement harness](docs/HARNESS.md) ·
 [Performance records](docs/FX_PERFORMANCE_METHOD.md) · [Provenance](reference/README.md)
 
-Build with `tools/Build.ps1`; test with `cargo test`.
+Build with `cargo skyline build --release` (or `tools/Build.ps1`); the NRO is
+`target/aarch64-skyline-switch/release/libssbu_fx_control.nro`. Test with
+`cargo test`.
 
-[firmware]: https://en-americas-support.nintendo.com/app/answers/detail/a_id/22525/~/nintendo-switch-system-updates-and-change-history#current
-[atmosphere]: https://github.com/Atmosphere-NX/Atmosphere/releases/tag/1.12.1
-[skyline]: https://github.com/skyline-dev/skyline/releases/tag/beta
+License: the repository has no license file.

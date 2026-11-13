@@ -1,7 +1,7 @@
 # Media and testing notes
 
-The examples show what the controls change. They are archived captures,
-separate from the operator's current testing report.
+The examples show what the controls change. They are archived Eden captures of
+development builds, not of the 0.3.0 release.
 
 <a id="files"></a>
 
@@ -41,18 +41,23 @@ All reads `Unavailable` while fighter rows differ. It shows menu editing,
 not gameplay or the Stages page. The [original still](media/fx-control-window.png)
 is retained. [Source details](MEDIA_REFERENCE.md#menu-capture-identity)
 
-## Operator-reported testing
+## Testing status
 
-On **2026-10-25 UTC**, the operator reported FX Control and Online Deluxe
-tested in **Eden and on an Erista Switch without issues observed**. No build,
-hash or scenario list was supplied.
+Checked 2026-11-13.
 
-The README links firmware **23.0.1**, Atmosphère **1.12.1** and Skyline
-runtime beta **`2eb226f`**, checked against upstream releases on that date.
-Compatibility is the operator's report, not an additional exact-build test.
-
-No [Reduced variant](FX.md#moves-and-variants) is accepted as a performance
-improvement; [stage phase and performance checks](STAGES.md#remaining-runtime-acceptance)
-remain open. Appearance changes and these captures do not establish FPS gains.
+- **Eden:** dated emulator samples only: the stage rows on 2026-10-21/22
+  ([summary by stage](STAGE_REFERENCE.md#summary-by-stage)), the menu capture
+  above and earlier fighter captures
+  ([emulator results](FX_EMULATOR_RESULTS.md)). The 0.1.0, 0.2.1 and 0.3.0
+  release manifests all say `runtime_tested: false`.
+- **Switch:** a read-only card audit on 2026-10-23 found the development build
+  `8bf2bdb4…` on the card (0.3.0 keeps its runtime source), next to firmware
+  23.0.1, Atmosphère 1.12.1 files and Skyline `beta` (`2eb226f`) files. No
+  test result from that card is recorded here. The card readbacks of
+  2026-11-02 to 2026-11-12 list no FX Control NRO, only its `config.ini`.
+- No [Reduced variant](FX.md#moves-and-variants) is accepted, no desync-detector
+  test has been run, and the
+  [stage phase and performance checks](STAGES.md#remaining-runtime-acceptance)
+  remain open. Appearance changes and these captures do not establish FPS gains.
 
 [Hashes, identities and methods](MEDIA_REFERENCE.md) · [Measurement protocol](HARNESS.md)

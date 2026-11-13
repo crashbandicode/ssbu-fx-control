@@ -4,10 +4,11 @@
 section is an **Online Deluxe** NRO with the FX feature built in and one
 global FX row. The request policy is the one ssbu-fx-control ports, but only
 the quota section used a ssbu-fx-control build (0.1.0). None is a Switch
-measurement or accepts a Reduced variant ([HARNESS](HARNESS.md) does), and
-none is the current build-less
-[operator-reported testing](MEDIA.md#operator-reported-testing). Archive
-paths refer to the operator's machine.
+measurement or accepts a Reduced variant ([HARNESS](HARNESS.md) does);
+current status: [testing status](MEDIA.md#testing-status). Archive paths
+refer to the operator's machine. On 2026-11-13 none of the evidence folders
+named below was found on the Surface, Yoga or XPS, so these numbers can no
+longer be re-derived from their captures.
 
 Related: [method](FX_PERFORMANCE_METHOD.md) ·
 [runtime matrix](FX_RUNTIME_MATRIX.md) · [source review](FX_REVIEW.md).
@@ -193,8 +194,8 @@ in `~/.local/share/ssbu-mod-backups/`.
 
 ## Follow-up to the peer's LessLag/LLUltra report — c0, October 8
 
-**Result.** The user clarified that “with the mod” in the peer's report meant
-LessLag or LLUltra. The claimed CPU hitbox cause remains a hypothesis. This
+**Result.** The peer's report concerned the LessLag and LLUltra profiles. The
+claimed CPU hitbox cause remains a hypothesis. This
 follow-up did not reproduce a consistent On-specific slowdown on this host,
 and it does not establish an Off or Reduced performance benefit.
 
@@ -266,9 +267,8 @@ measurements remain necessary before claiming Reduced avoids its lag spikes.
 <!-- quota-campaign-2026-10-15:begin -->
 ## Per-move frame drops under a 120 % CPU quota — 2026-10-15
 
-Operator request: measure, under Switch-like constraints, whether Off or
-Reduced helps with frame drops, per covered move, and show it in the README
-table.
+Purpose: measure, under Switch-like constraints, whether Off or Reduced helps
+with frame drops, per covered move (the 0.1.x README showed the table).
 
 | Setup | Detail |
 | --- | --- |

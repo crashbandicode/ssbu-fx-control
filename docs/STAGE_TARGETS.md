@@ -708,8 +708,9 @@ per cell; leave Status `pending` until every column for that row has evidence.
 | Stage list and IDs | Elite Legal Stages settings; skyline-smash `bed642e` `StageID` (see [STAGE_REFERENCE](STAGE_REFERENCE.md)) |
 | External catalog SHA256 | `MODEL-TARGETS.json` `c051e3ff721c56f4ef4e0998e35cda10efd33a4d9850df5239cf5da99341addf`; `DIRINFO-IDENTITIES.json` `0f1c1d2aed3b1029f5ffa7f656c8e53154bc9bf9d2dd323360aa7247a18af1dc`; `RESOURCE-CENSUS.json` `1842d99f3634db7a3a6d25d4a49184031e160f4401e8a7deea18857f90bf7e8f` |
 
-External files live under `~/.local/share/ssbu-mod-backups/plugin-api-tangent-20261012/`
-(`stage-background-1021/` and `stage-background-remaining-1021/`). Descriptor
+External files were kept under `~/.local/share/ssbu-mod-backups/plugin-api-tangent-20261012/`
+(`stage-background-1021/` and `stage-background-remaining-1021/`); neither
+folder was found on the Surface, Yoga or XPS on 2026-11-13. Descriptor
 SHA256 values identify stock files kept outside the repository; no asset bytes
 or descriptor copies are committed.
 

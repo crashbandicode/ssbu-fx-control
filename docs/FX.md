@@ -7,7 +7,8 @@ already on screen finish normally.
 ![Palutena Autoreticle with effects On above Off](media/palutena-autoreticle-on-off.webp)
 
 *Off removes the cyan staff glow; the reticle and hits remain. Separate
-FX 0.1.0 captures, aligned at the cast. [Capture notes](MEDIA.md#fighter-comparison)*
+casts in Eden, 2026-10-14, FX Control 0.1.0 (`eb627b8`), aligned at the cast.
+[Capture notes](MEDIA.md#fighter-comparison)*
 
 ## Modes
 
@@ -30,7 +31,8 @@ variant (Inkling) On, never Off. While the rows differ, All shows
 
 ## Scope
 
-**Online** (default) applies the rows in online play outside Training. Set
+**Online** (default) applies the rows in online play outside Training; with
+Online Deluxe, local wireless counts as online. Set
 **All** for offline matches and Training. With Online Deluxe older than
 0.5.0 there is no online signal, so the rows apply only with Scope All
 ([online detection](CONFIGURATION.md#scope-and-online-detection)). Stage
@@ -72,10 +74,9 @@ can remain visible in Off.
 
 ## Testing
 
-- **Current:** on 2026-10-25 the operator reported testing in Eden and on an
-  Erista Switch without issues observed. The report names no build or
-  scenario and accepts no variant
-  ([testing notes](MEDIA.md#operator-reported-testing)).
+- **Current:** Eden samples only; no Switch result and no desync-detector test
+  is recorded, and no variant is accepted
+  ([testing status](MEDIA.md#testing-status)).
 - **Historical:** earlier runtime evidence was recorded with Online Deluxe
   builds and FX Control 0.1.0
   ([evidence and provenance](FX_REFERENCE.md#evidence-and-provenance)).

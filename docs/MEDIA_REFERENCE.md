@@ -1,29 +1,26 @@
 # Media source reference
 
 Exact capture identities, hashes and transformations for the
-[media and testing guide](MEDIA.md). These archived demonstrations are separate
-from the current operator testing report. The original menu still is retained.
+[media and testing guide](MEDIA.md). These are archived Eden demonstrations of
+development builds; the [testing status](MEDIA.md#testing-status) is separate.
+The original menu still is retained. The stage comparison shows gameplay, not
+the Stages settings page.
 
-## Operator-reported testing
+## Switch card audit, 2026-10-23
 
-On 2026-10-25 (UTC) the operator reported that both plugins, FX Control and Online
-Deluxe, were tested in Eden and on an Erista Switch without issues observed.
+The source of the [testing status](MEDIA.md#testing-status)'s Switch line:
+`smash-training-lobby/artifacts/enhancements/console-practice91/trace-control100/ENVIRONMENT-SANITY.md`,
+a read-only audit of the card over DBI MTP.
 
-- The report names no build, hash or scenario list, so none is assigned here.
-- The README's compatibility line (Switch firmware 23.0.1, Atmosphère 1.12.1,
-  Skyline beta `2eb226fa9e4ab023dc00cb0db10ad4ec50ac4fa3`, released
-  2026-04-12) gives the latest upstream releases, checked against their release
-  pages on 2026-10-25. Compatibility with them is the user's report; it does
-  not tie a build to any of them. The Skyline entry is the runtime's `beta`
-  release, not a Rust crate version.
-- It is not a performance acceptance. No Reduced variant is accepted yet;
-  acceptance follows [HARNESS](HARNESS.md) and is recorded per move in
-  [Moves and variants](FX.md#moves-and-variants).
-- It does not close the stage limits in
-  [STAGES](STAGES.md#remaining-runtime-acceptance): per-phase coverage,
-  negative controls, and stock-clock performance remain unresolved.
-- It is separate from the historical menu and gameplay captures below.
-  The stage comparison shows gameplay, not the Stages settings page.
+- `libssbu_fx_control.nro` on the card: SHA-256 `8bf2bdb451266feb…`, the
+  development build of the [Surface correction review](STAGE_REFERENCE.md#surface-correction-review-2026-10-22).
+  The 0.3.0 release manifest records that its runtime source equals that build's
+  (`source_inputs_match_tested_stage_candidate`).
+- Firmware 23.0.1 from the console's error reports (2026-10-14 to 2026-10-23);
+  `atmosphere/package3` and `stratosphere.romfs` byte-identical to Atmosphère
+  1.12.1; `exefs/subsdk9` and `main.npdm` byte-identical to Skyline's `beta`
+  release (2026-04-12, commit `2eb226fa9e4ab023dc00cb0db10ad4ec50ac4fa3`).
+- It is an identity audit, not a test of the plugin.
 
 ## Files
 
@@ -93,9 +90,11 @@ records the full session.
   It was re-encoded with a two-pass FFmpeg palette.
 - No upscaling, redrawing or compositing.
 
-Crop receipts and review frames are kept outside the repository in the
-operator's evidence directory `docs-notes-fx-1025/`; the original captures are
-in `deluxe-media-refresh-1024/`.
+Crop receipts and review frames were kept outside the repository in
+`docs-notes-fx-1025/`, and the original captures in
+`deluxe-media-refresh-1024/`; neither folder was found on the Surface, Yoga or
+XPS on 2026-11-13. The source GIF's hash above matches Deluxe's
+`docs/media/fx-control-edit.gif`.
 
 ## Smashville On/Off comparison
 
@@ -133,10 +132,12 @@ images are stacked with 48-pixel state-label bands and an 8-pixel gap. The
 366,635-byte JPEG uses quality 92, 4:4:4 chroma and optimized encoding. Only the
 labels and surrounding bands are added; no gameplay pixels are redrawn.
 
-Originals and runtime evidence remain in the operator's `fx-surface-1022/`
-archive; the reproducible composition receipt and visual review are in
-`fx-readme-mobile-1025/`. See [stage validation](STAGES.md#remaining-runtime-acceptance)
-for remaining phase, negative-control and performance checks.
+The originals and the run's install receipt are on the Surface in
+`/home/intpa/fxs1022/` (`runs/sky3974/`, `SKY3974-INSTALL.json`; hashes checked
+2026-11-13). The composition receipt and visual review were kept in
+`fx-readme-mobile-1025/`, not found on the Surface, Yoga or XPS on 2026-11-13.
+See [stage validation](STAGES.md#remaining-runtime-acceptance) for remaining
+phase, negative-control and performance checks.
 
 ## Fighter comparison
 
@@ -183,6 +184,7 @@ frames become 41 encoded frames after identical-frame merging. It is
 `57d13cde4f44ce11b11711821ec3440e04164aa076f589dc891a2a717293dbec`
 
 The original recordings, install logs, settings/reset images and campaign
-observations remain in `fx-gifs-1014/`. Source contact sheets, exact frame map,
-encoding receipts and decoded start/action/end reviews are in
-`fx-fighter-docs-1025/` under the operator's evidence root.
+observations were kept in `fx-gifs-1014/`; the source contact sheets, frame
+map, encoding receipts and frame reviews in `fx-fighter-docs-1025/`. Neither
+folder was found on the Surface, Yoga or XPS on 2026-11-13, so the source
+hashes above can no longer be re-checked.

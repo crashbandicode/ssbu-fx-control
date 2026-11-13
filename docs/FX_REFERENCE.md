@@ -115,7 +115,7 @@ deletion sweeps.
 
 ## Moves and variants
 
-The 0.1.x line (branch `archive/0.1.x-appearance-variants`, release 0.1.0)
+The 0.1.x line (release 0.1.0, tag `v0.1.0`; main's history up to `7192579`)
 chose its Reduced variants by appearance; some measured slower than On. The
 0.2 line restarts from measurements: `src/moves.rs` lists the moves that the
 2026-10-15 console captures put on the ledger, every effect layer their
@@ -194,15 +194,10 @@ Off/On, Sephiroth neutral-B suppression, the Reduced families in the
 Deluxe 0.5.0 builds for the per-move captures in the quota section of the
 [emulator results](FX_EMULATOR_RESULTS.md). 0.2.0 has **no recorded runtime
 acceptance of its own yet**: its per-move variants, the descriptor version 4
-page and the plugin's own online hooks are host-tested. On 2026-10-25 (UTC)
-the operator reported testing in Eden and on an Erista Switch without issues
-observed. That report carries no build or scenario list, accepts no Reduced
-variant, and does not close the stage limits in
-[STAGES](STAGES.md#remaining-runtime-acceptance)
-([operator-reported testing](MEDIA.md#operator-reported-testing)).
-This repository records no fighter runtime acceptance tied to a 0.2.1 or
-0.3.0 build either; the operator report above is the current, build-less
-status.
+page and the plugin's own online hooks are host-tested. This repository
+records no fighter runtime acceptance tied to a 0.2.1 or 0.3.0 build either
+([testing status](MEDIA.md#testing-status)); the stage limits in
+[STAGES](STAGES.md#remaining-runtime-acceptance) remain open.
 
 ## Reduced implementation
 
@@ -214,7 +209,8 @@ request only from an actor in that move (a Gigaflare layer requested
 elsewhere is preserved); a move without one (Pyra's specials, Kirby's hammer,
 PK Fire) claims its layers by name. Variants are accepted only through the
 console protocol in [HARNESS](HARNESS.md). The character-wide and
-appearance-chosen tables of 0.1.x are on the archive branch.
+appearance-chosen tables of 0.1.x are in the history before `499ba8f` (for
+example tag `v0.1.0`).
 
 In 0.1.x, Palutena's up-air resource had a separate lighter copy (an EFF
 sibling, see below) so its visible cue remained; that copy was deleted in
@@ -229,8 +225,8 @@ was deleted in 0.2.0: the modules, hooks 264 and 265 (`kill_kind`,
 `detach_kind`) and the ACMD hooks 0x11a and 0x11b (`EFFECT_OFF_KIND`,
 `EFFECT_DETACH_KIND`) are gone, and ARCropolis is not needed. Reduced is
 exactly the per-move variant from `src/moves.rs`; Inkling has no Reduced
-variant. The code survives only on the branch
-`archive/0.1.x-appearance-variants`.
+variant. The code survives only in the history before `857805d`
+(2026-10-16), for example tag `v0.1.0`; no archive branch exists on Forgejo.
 
 The roller runtime check (Deluxe `24e714e7`) exposed an Off-table alias gap:
 the peer names `inkling_roller`, while the game requests

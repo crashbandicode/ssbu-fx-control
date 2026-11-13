@@ -34,6 +34,6 @@ yet; see [HARNESS](HARNESS.md)).
 actual transition matrix. The old `c1706bbe` runtime acceptance does not
 validate new hooks.
 
-The full review is retained locally with the audit artifacts. No peer code is
-added as a runtime dependency by this review. The 41 excluded cues are listed
+The full review is not in this repository. No peer code is added as a
+runtime dependency by this review. The 41 excluded cues are listed
 in `reference/fx-expanded-policy.json` ([provenance](../reference/README.md)).
