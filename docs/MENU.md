@@ -57,6 +57,10 @@ each variant removes: [variant table](FX_REFERENCE.md#moves-and-variants).
 
 ## Stages page
 
+> **The Stages options aren't online-safe: use them offline only.** Fighter
+> Scope doesn't apply to them, so an Off row applies online too. Set **All
+> backgrounds** On before you play online.
+
 **Stages** (`fx_control_stages`) has a **Background visuals** header, **All
 backgrounds**, one On / Off row per stage (default On, in the
 [stage table](STAGES.md#what-off-hides) order), and a closing **Reload stage to

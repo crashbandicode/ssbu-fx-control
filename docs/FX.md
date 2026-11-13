@@ -36,7 +36,8 @@ Online Deluxe, local wireless counts as online. Set
 **All** for offline matches and Training. With Online Deluxe older than
 0.5.0 there is no online signal, so the rows apply only with Scope All
 ([online detection](CONFIGURATION.md#scope-and-online-detection)). Stage
-rows are separate: they ignore Scope and All ([stages](STAGES.md)).
+rows are separate: they ignore Scope and All, and they aren't online-safe, so
+use them offline only ([stages](STAGES.md)).
 
 ## Moves and variants
 

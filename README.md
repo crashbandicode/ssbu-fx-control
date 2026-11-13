@@ -28,14 +28,18 @@ matches and Training. Variants are not yet proven to raise FPS.
 
 ## Stages
 
+> **The Stages options aren't online-safe: use them offline only.** The plugin
+> doesn't turn stage rows off for you online, so set them back to On
+> (**All backgrounds** On) before you play online.
+
 ![Smashville On above Off: village scenery disappears while the blue sky, fighters and playable platform remain](docs/media/smashville-on-off.jpg)
 
 *Smashville On above Off. Eden, 2026-10-22, development build `39744aa9…` (before 0.3.0). [Media notes](docs/MEDIA.md#smashville-on-off-comparison)*
 
 Each stage is **On** (default) or **Off**; there is no Reduced. Stage rows
-apply online and offline, separately from fighter Scope and All. Reload the
-stage after a change. Off hides selected background effects and scenery,
-not the whole background, and no FPS gain is claimed.
+ignore fighter Scope and All, so an Off row applies in every mode, online
+included. Reload the stage after a change. Off hides selected background
+effects and scenery, not the whole background, and no FPS gain is claimed.
 [Stages](docs/STAGES.md)
 
 ## Controls

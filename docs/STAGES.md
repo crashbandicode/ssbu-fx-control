@@ -5,6 +5,11 @@ Each of Elite Legal Stages' eleven normal stages has an **On** (default) or
 line in [config.ini](CONFIGURATION.md#keys). Elite only supplies the list; this
 plugin neither requires nor changes it.
 
+> **The Stages options aren't online-safe: use them offline only.** Stage rows
+> ignore Scope, so the plugin applies an Off row online too. Set every row On
+> (**All backgrounds** On, or `stages=on` with no `stage.<key>=off` line)
+> before you play online.
+
 ![Smashville On above Off: village scenery disappears while the blue sky, fighters and playable platform remain](media/smashville-on-off.jpg)
 
 *Smashville On (top) and Off (bottom): two separate Eden captures, 2026-10-22,
@@ -47,7 +52,8 @@ every key, name, hash and preserved example; IDs and guards are in the
 - **On / Off only.** There is no Reduced. **All backgrounds** sets all eleven
   rows.
 - **Separate from fighters.** Fighter All, Reduced and Scope do not affect stage
-  rows, and stage rows apply offline and online.
+  rows, so an Off row applies offline and online alike. **They aren't
+  online-safe: use them offline only.**
 - **Reload the stage for a consistent result.** New requests follow the row
   at once and captured models may change on their next draw, but effects
   already created finish normally and turning On does not bring back missed

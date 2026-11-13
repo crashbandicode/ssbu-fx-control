@@ -56,8 +56,10 @@ captain_falcon=reduced
 variant.falcon_punch=0
 ```
 
-Smashville's targeted scenery Off, every other stage On; this applies offline
-and online whatever `scope=` says:
+Smashville's targeted scenery Off, every other stage On. Stage lines ignore
+`scope=`, so this also applies online. **The Stages options aren't
+online-safe: use them offline only**, and set them back to On before you play
+online:
 
 ```ini
 stages=on

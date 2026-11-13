@@ -84,8 +84,9 @@ stage.end=on
   allows. A name without a known prefix is skipped. Read at start, kept
   verbatim on rewrite; the menu cannot change it.
 - `stages=on|off` is applied before every `stage.<key>=on|off`, whatever the
-  line order. A stage line wins over `stages=`. These keys apply offline and
-  online and ignore fighter All, Reduced, and Scope. All eleven stages
+  line order. A stage line wins over `stages=`. These keys ignore fighter All,
+  Reduced, and Scope, so they also apply online. They aren't online-safe: use
+  them offline only ([STAGES](STAGES.md)). All eleven stages
   default On. A stage value of `reduced`, or any other unknown value, is
   ignored. Reload the stage after a menu change for a consistent result. A
   rejected stage hook disables its rows and **All backgrounds**. Keys and
