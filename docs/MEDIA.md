@@ -50,11 +50,16 @@ Checked 2026-11-13.
   above and earlier fighter captures
   ([emulator results](FX_EMULATOR_RESULTS.md)). The 0.1.0, 0.2.1 and 0.3.0
   release manifests all say `runtime_tested: false`.
-- **Switch:** a read-only card audit on 2026-10-23 found the development build
-  `8bf2bdb4…` on the card (0.3.0 keeps its runtime source), next to firmware
+- **Switch:** FX Control 0.1.0 (`505dfecd…`) was on the card on 2026-10-15,
+  when Online Deluxe's console move captures ran with every FX row On
+  (Deluxe `docs/VALIDATION.md`, "0.5.2 — 2026-10-15: console move captures");
+  those captures chose the [ledger moves](FX.md#moves-and-variants) and tested
+  no Off or Reduced setting. A read-only card audit on 2026-10-23 found the
+  development build `8bf2bdb4…` on the card (0.3.0 keeps its runtime source), next to firmware
   23.0.1, Atmosphère 1.12.1 files and Skyline `beta` (`2eb226f`) files. No
   test result from that card is recorded here. The card readbacks of
-  2026-11-02 to 2026-11-12 list no FX Control NRO, only its `config.ini`.
+  2026-11-02 to 2026-11-12 list no FX Control NRO, only its settings in
+  `ultimate/ssbu_fx_control/`.
 - No [Reduced variant](FX.md#moves-and-variants) is accepted, no desync-detector
   test has been run, and the
   [stage phase and performance checks](STAGES.md#remaining-runtime-acceptance)

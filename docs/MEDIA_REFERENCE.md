@@ -6,11 +6,22 @@ development builds; the [testing status](MEDIA.md#testing-status) is separate.
 The original menu still is retained. The stage comparison shows gameplay, not
 the Stages settings page.
 
-## Switch card audit, 2026-10-23
+## Switch card evidence
 
-The source of the [testing status](MEDIA.md#testing-status)'s Switch line:
-`smash-training-lobby/artifacts/enhancements/console-practice91/trace-control100/ENVIRONMENT-SANITY.md`,
-a read-only audit of the card over DBI MTP.
+The sources of the [testing status](MEDIA.md#testing-status)'s Switch line,
+on the Surface under `/home/intpa/`:
+
+- 2026-10-15: `smash-training-lobby/artifacts/switch-input-display-7.1.2/switch-before-7.1.2.json`,
+  a card listing with `libssbu_fx_control.nro` 581632 B, SHA-256 `505dfecd…`
+  (the v0.1.0 release asset's hash).
+- 2026-11-02 to 2026-11-12: `ssbu-cpu-pilot-install/card-2026-11-02/listing.txt`
+  and the plugin readbacks of every `smash-training-lobby/artifacts/card-install-*`
+  receipt (2026-11-10 to 2026-11-12) list no `libssbu_fx_control.nro`.
+
+### 2026-10-23 audit
+
+`smash-training-lobby/artifacts/enhancements/console-practice91/trace-control100/ENVIRONMENT-SANITY.md`
+is a read-only audit of the card over DBI MTP.
 
 - `libssbu_fx_control.nro` on the card: SHA-256 `8bf2bdb451266feb…`, the
   development build of the [Surface correction review](STAGE_REFERENCE.md#surface-correction-review-2026-10-22).
