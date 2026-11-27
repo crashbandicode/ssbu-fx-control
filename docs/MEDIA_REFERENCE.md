@@ -38,7 +38,7 @@ is a read-only audit of the card over DBI MTP.
 | File | Capture |
 | --- | --- |
 | [Menu still](media/fx-control-window.png) | 380×258. The FX Control page, every row On |
-| [Menu GIF](media/fx-control-edit.gif) | 380×258; 8 s, 80 frames. A Captain Falcon row edit |
+| <video src="https://git.syntaxbyexample.com/intpa/ssbu-fx-control/media/blob/0d536c48034953127e1d3bd8d7f7eff87c266fe9" aria-label="Menu demo" autoplay muted loop playsinline controls></video> [Open the clip](media/fx-control-edit.mp4) | 380×258; 8 s, 80 frames. A Captain Falcon row edit |
 | [Stage comparison](media/smashville-on-off.jpg) | 800×1004. Separate Smashville On (top) and Off (bottom) captures |
 | [Fighter comparison](media/palutena-autoreticle-on-off.webp) | 480×606; 3.5 s, 41 frames. Palutena Autoreticle On (top) and Off (bottom) |
 
@@ -46,8 +46,8 @@ SHA-256:
 
 - `fx-control-window.png`:
   `7dfdef3520dc78925aa8c7a065a6c0176ef29ea54ea7fa33ae6e33a0dc136350`
-- `fx-control-edit.gif`:
-  `baba9df75c760a8832acdd6ff75740091703d9b1c14dbf45e9c6c4d6a89f033d`
+- `fx-control-edit.mp4`:
+  `0fbcf2dd55bb760ca5b9d43578da279e2455feb90fd136927a970e30f1cb2539`
 - `smashville-on-off.jpg`:
   `224f44152fa98d12f122896ac4c74d6daded5698854eb30d56b50ac9e0c24454`
 

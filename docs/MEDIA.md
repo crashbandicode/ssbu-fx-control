@@ -11,7 +11,7 @@ development builds, not of the 0.3.0 release.
 | --- | --- |
 | [Fighter comparison](media/palutena-autoreticle-on-off.webp) | Palutena's cyan staff glow disappears in Off; targeting and hits remain. |
 | [Stage comparison](media/smashville-on-off.jpg) | Smashville's village scenery disappears in Off; the sky and playable platform remain. |
-| [Menu demo](media/fx-control-edit.gif) | Captain Falcon's row cycles On → Off → Reduced → On. |
+| <video src="https://git.syntaxbyexample.com/intpa/ssbu-fx-control/media/blob/0d536c48034953127e1d3bd8d7f7eff87c266fe9" aria-label="Menu demo" autoplay muted loop playsinline controls></video> [Open the clip](media/fx-control-edit.mp4) | Captain Falcon's row cycles On → Off → Reduced → On. |
 
 ## Fighter comparison
 

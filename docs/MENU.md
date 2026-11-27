@@ -6,7 +6,7 @@ window: **FX Control** for fighters and **Stages** for
 [stage backgrounds](STAGES.md). Deluxe is optional: both pages edit what
 [config.ini](CONFIGURATION.md) holds.
 
-![Captain Falcon's row going from On to Off to Reduced and back to On, with All showing Unavailable while the rows differ](media/fx-control-edit.gif)
+<video src="https://git.syntaxbyexample.com/intpa/ssbu-fx-control/media/blob/0d536c48034953127e1d3bd8d7f7eff87c266fe9" aria-label="Captain Falcon&#x27;s row going from On to Off to Reduced and back to On, with All showing Unavailable while the rows differ" autoplay muted loop playsinline controls></video> [Open the clip](media/fx-control-edit.mp4)
 
 *Captain Falcon On → Off → Reduced → On. Eden, 2026-10-24, development build
 `8bf2bdb4…` (0.2.1 plus the stage changes), with Scope All, the capture
