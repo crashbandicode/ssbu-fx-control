@@ -56,14 +56,50 @@ With [Online Deluxe](https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-re
 
 ## Install
 
-1. Copy `libssbu_fx_control.nro` to
-   `sd:/atmosphere/contents/01006A800016E000/romfs/skyline/plugins/`,
-   replacing any older copy, and restart the game.
-2. Online Deluxe is optional. Without it, edit
-   `sd:/ultimate/ssbu_fx_control/config.ini`, created on first start
-   ([configuration](docs/CONFIGURATION.md)).
-3. Don't use it with an Online Deluxe older than 0.5.0: those versions
-   have character-effect hooks of their own.
+FX Control v0.3.0 (2026-10-24) is for players who want simpler backgrounds on eleven normal stages.
+
+### What you need
+
+| Thing | Upstream | Our fork | What the fork changes |
+| --- | --- | --- | --- |
+| Switch firmware | [23.0.1](https://en-americas-support.nintendo.com/app/answers/detail/a_id/22525) | — | — |
+| Atmosphère | [1.12.1](https://github.com/Atmosphere-NX/Atmosphere/releases/latest) | [RO cleanup](https://git.syntaxbyexample.com/intpa/atmosphere-ro-cleanup-p1) | Cleans up after failed module loads. |
+| Super Smash Bros. Ultimate | 13.0.5 | — | — |
+| Skyline | [beta](https://github.com/skyline-dev/skyline/releases/latest) | [Skyline](https://git.syntaxbyexample.com/intpa/skyline) | Protects the logging queue during simultaneous writes. |
+| Online Deluxe (for menu controls) | [0.5.3 or later](https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite/releases/latest) | — | — |
+
+### Copy to the SD card
+
+1. Close Smash. Download [libssbu_fx_control.nro](https://git.syntaxbyexample.com/intpa/ssbu-fx-control/releases/download/v0.3.0/libssbu_fx_control.nro).
+2. Copy it to `sd:/atmosphere/contents/01006A800016E000/romfs/skyline/plugins/libssbu_fx_control.nro`. Create missing folders, then restart Smash.
+
+Keep `manifest.json` on your computer for file verification.
+
+**Update:** Replace the old NRO at that path. Keep `sd:/ultimate/ssbu_fx_control/config.ini` to retain settings.
+
+**Uninstall:** Close Smash, delete `libssbu_fx_control.nro` from the plugins folder above, then restart Smash.
+
+### What changed
+
+| Change | Guide |
+| --- | --- |
+| Toggle backgrounds together or individually on Deluxe’s Stages page or in the INI. | [Details](https://git.syntaxbyexample.com/intpa/ssbu-fx-control/src/tag/v0.3.0/docs/STAGES.md) |
+| Hide selected particles on five stages and scenery groups on six. | [Details](https://git.syntaxbyexample.com/intpa/ssbu-fx-control/src/tag/v0.3.0/docs/STAGE_TARGETS.md) |
+
+### Tested on
+
+| Feature | Hardware | Eden |
+| --- | --- | --- |
+| Toggle backgrounds together or individually on Deluxe’s Stages page or in the INI. | no | yes (candidate) |
+| Hide selected particles on five stages and scenery groups on six. | no | yes (sampled candidate) |
+
+“No” means no recorded test of that feature for this release.
+The stage-specific checks used an Eden candidate. No hardware test of these controls is recorded.
+
+### Known limits
+
+- Use stage settings offline only. Set **All backgrounds** to **On** before playing online. Reload the stage after editing it. Some scenery stays visible. [Guide](https://git.syntaxbyexample.com/intpa/ssbu-fx-control/src/tag/v0.3.0/docs/STAGES.md)
+- For INI-only play, edit `sd:/ultimate/ssbu_fx_control/config.ini` after first launch. Avoid Deluxe versions older than 0.5.0.
 
 ## More
 
