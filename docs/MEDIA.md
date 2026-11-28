@@ -1,7 +1,7 @@
 # Media and testing notes
 
-The examples show what the controls change. They are archived Eden captures of
-development builds, not of the 0.3.0 release.
+The examples show what the controls change. The menu clip shows FX Control 0.3.1 in Eden.
+The older captures show development builds.
 
 <a id="files"></a>
 

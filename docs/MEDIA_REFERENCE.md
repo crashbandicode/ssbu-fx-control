@@ -1,8 +1,8 @@
 # Media source reference
 
 Exact capture identities, hashes and transformations for the
-[media and testing guide](MEDIA.md). These are archived Eden demonstrations of
-development builds; the [testing status](MEDIA.md#testing-status) is separate.
+[media and testing guide](MEDIA.md). The menu clip shows FX Control 0.3.1 in Eden.
+The older captures show development builds. The [testing status](MEDIA.md#testing-status) is separate.
 The original menu still is retained. The stage comparison shows gameplay, not
 the Stages settings page.
 
