@@ -38,7 +38,7 @@ is a read-only audit of the card over DBI MTP.
 | File | Capture |
 | --- | --- |
 | [Menu still](media/fx-control-window.png) | 380×258. The FX Control page, every row On |
-| <video src="https://git.syntaxbyexample.com/intpa/ssbu-fx-control/media/blob/0d536c48034953127e1d3bd8d7f7eff87c266fe9" aria-label="Menu demo" autoplay muted loop playsinline controls></video> [Open the clip](media/fx-control-edit.mp4) | 380×258; 8 s, 80 frames. A Captain Falcon row edit |
+| <video src="https://git.syntaxbyexample.com/intpa/ssbu-fx-control/media/blob/f4c35348b2c251117c00f4cefe6ced4be20be067" aria-label="Menu demo" autoplay muted loop playsinline controls></video> [Open the clip](media/fx-control-edit.mp4) | 1280×720; 7 s, 60 frames/s. A Captain Falcon row edit, the window in the upper left over the main menu |
 | [Stage comparison](media/smashville-on-off.jpg) | 800×1004. Separate Smashville On (top) and Off (bottom) captures |
 | [Fighter comparison](media/palutena-autoreticle-on-off.webp) | 480×606; 3.5 s, 41 frames. Palutena Autoreticle On (top) and Off (bottom) |
 
@@ -47,30 +47,50 @@ SHA-256:
 - `fx-control-window.png`:
   `7dfdef3520dc78925aa8c7a065a6c0176ef29ea54ea7fa33ae6e33a0dc136350`
 - `fx-control-edit.mp4`:
-  `0fbcf2dd55bb760ca5b9d43578da279e2455feb90fd136927a970e30f1cb2539`
+  `18b579e706d6188b8b5748ea1542634609a8a47fdfa056be0d62cf8fc0b8e18d`
 - `smashville-on-off.jpg`:
   `224f44152fa98d12f122896ac4c74d6daded5698854eb30d56b50ac9e0c24454`
 
 ## What the GIF shows
 
-Sampled by GIF time:
+The heading is kept for existing links; the GIF is now the clip. Sampled by
+clip time:
 
 - **0 s:** Captain Falcon On, All On.
-- **3.5 s:** Captain Falcon Off, All `Unavailable`.
-- **5.5 s:** Captain Falcon Reduced, All `Unavailable`.
-- **7.9 s:** Captain Falcon On again, All On.
+- **1.3 s:** Captain Falcon Off, All `Unavailable`.
+- **3.3 s:** Captain Falcon Reduced, All `Unavailable`.
+- **5.5 s:** Captain Falcon On again, All On.
 
-The menu still and GIF show **Scope All** and start with every fighter row On. These are
-the capture fixture's settings; the shipped default scope is Online.
+The clip shows **Scope Online**, the shipped default. The menu still shows
+**Scope All**, its capture fixture's setting. Both start with every fighter
+row On.
 
 They are menu demonstrations only. They show no gameplay, no effect being
-reduced and no frame rate, and they are not performance evidence.
+reduced and no frame rate, and they are not performance evidence. In the clip
+the game's own main menu reacts to the same inputs behind the window: ZR opens
+and closes its Dashboard, which dims the menu.
 
 ## Menu capture identity
 
-Captured on **2026-10-24** in an isolated, muted Eden profile on Ubuntu
-(the Surface fixture), Smash **13.0.5**, during Online Deluxe's 0.7.0 media
-refresh.
+**The clip** was captured on **2026-11-28** in Eden on Ubuntu, Smash
+**13.0.5**, in Online Deluxe's re-shoot of its own clips (run
+`filmx2-b-rc16-yoga-1`, take `x2-04-fx-control-edit`). The file is
+byte-identical to Deluxe's `docs/media/fx-control-edit.mp4`.
+
+- **Online Deluxe:** the released 0.10.8 NRO, build
+  `0.10.8-e7720fd64c92-1794800172`, SHA-256
+  `30cb25ddea78b2f14ec4da0c4a0306fb314eed7a4cafc3a29d17beca72770c33`.
+- **FX Control:** 0.3.1, NRO SHA-256
+  `08370081a6d5e4a5e413ad1f5b6abeed962c2b76ce105b97a4658b7cf872bf4b`.
+- **Eden:** the operator's test build `20261117-d34ddcc9b733`, AppImage
+  SHA-256 `e8dcc67326bdee93f1246e2696a5de36619aa4e5b618ab4329bcaec8af5d95bc`,
+  muted, fullscreen at 1x on a private 1920×1080 display.
+- **Other plugins loaded:** the operator's test lineup of that day, with
+  TrainingRooms 0.2.0-rc.16 and a test-only Horizon-OC stand-in.
+
+**The menu still** was captured on **2026-10-24** in an isolated, muted Eden
+profile on Ubuntu (the Surface fixture), Smash **13.0.5**, during Online
+Deluxe's 0.7.0 media refresh. The three entries below are the still's.
 
 - **Online Deluxe:** the released 0.7.0 NRO, build
   `0.7.0-9a7f81ce1937-1792670948`, SHA-256
@@ -80,7 +100,7 @@ refresh.
   `8bf2bdb451266feba0e57a6b6996aceaf334b9cf190add0e8219aa9d8e1efdd8`.
   It was built from a working tree with uncommitted changes on top of
   `0c0d7e6`. It is **not** the clean 0.2.1 release, and it is **not** a 0.3.0
-  capture. The images show the FX Control page only. The rows visible there
+  capture. The still shows the FX Control page only. The rows visible there
   (Scope, All and the first eight fighters) match that page's order.
 - **Eden:** the running binary reports commit
   `10bcd2d849843b146a79c61a21df615e1bdcfcde`, SHA-256
@@ -88,24 +108,24 @@ refresh.
 
 Online Deluxe's
 [media provenance](https://git.syntaxbyexample.com/intpa/ssbu-online-deluxe-rewrite/src/branch/main/docs/MEDIA_PROVENANCE.md)
-records the full session.
+records the still's full session.
 
 ## Menu encoding
 
 - **PNG:** byte-identical to Deluxe's `docs/media/fx-control-window.png` at
   Deluxe commit `5164caa`, a source-pixel close-up of the window.
-- **GIF:** cropped from Deluxe's 480×340 `docs/media/fx-control-edit.gif`
-  (SHA-256 `cd3038e4e5ea0e7a099cf9daf4a9912b85213ea26844a187e41f148321ff2f72`)
-  at x 0, y 0, 380×258 source pixels, keeping the full 0–8 s at 10 images/s.
-  The tighter crop drops background so the labels read larger on a phone.
-  It was re-encoded with a two-pass FFmpeg palette.
+- **Clip:** seconds 0.5 to 7.5 of one continuous 60 frames/s film of the
+  whole 1920×1080 display. It is the film's upper-left 1280×720 at its own
+  pixels, encoded as H.264. Online Deluxe made the cut; this repository
+  carries the same file.
 - No upscaling, redrawing or compositing.
 
-Crop receipts and review frames were kept outside the repository in
-`docs-notes-fx-1025/`, and the original captures in
+The still's crop receipts and review frames were kept outside the repository
+in `docs-notes-fx-1025/`, and its original captures in
 `deluxe-media-refresh-1024/`; neither folder was found on the Surface, Yoga or
-XPS on 2026-11-13. The source GIF's hash above matches Deluxe's
-`docs/media/fx-control-edit.gif`.
+XPS on 2026-11-13. The clip's receipts and review frames are in the
+operator's evidence folder `phase23/refilm/film-x2/`; its raw film was deleted
+after the cut.
 
 ## Smashville On/Off comparison
 

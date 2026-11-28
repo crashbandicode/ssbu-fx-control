@@ -6,11 +6,11 @@ window: **FX Control** for fighters and **Stages** for
 [stage backgrounds](STAGES.md). Deluxe is optional: both pages edit what
 [config.ini](CONFIGURATION.md) holds.
 
-<video src="https://git.syntaxbyexample.com/intpa/ssbu-fx-control/media/blob/0d536c48034953127e1d3bd8d7f7eff87c266fe9" aria-label="Captain Falcon&#x27;s row going from On to Off to Reduced and back to On, with All showing Unavailable while the rows differ" autoplay muted loop playsinline controls></video> [Open the clip](media/fx-control-edit.mp4)
+<video src="https://git.syntaxbyexample.com/intpa/ssbu-fx-control/media/blob/f4c35348b2c251117c00f4cefe6ced4be20be067" aria-label="Captain Falcon&#x27;s row going from On to Off to Reduced and back to On, with All showing Unavailable while the rows differ" autoplay muted loop playsinline controls></video> [Open the clip](media/fx-control-edit.mp4)
 
-*Captain Falcon On → Off → Reduced → On. Eden, 2026-10-24, development build
-`8bf2bdb4…` (0.2.1 plus the stage changes), with Scope All, the capture
-fixture's setting; the shipped default is Online. Recorded on released Deluxe 0.7.0
+*Captain Falcon On → Off → Reduced → On, with the window over the game's main
+menu. Eden, 2026-11-28, FX Control 0.3.1 (`08370081…`) on released Deluxe
+0.10.8, with Scope Online, the shipped default
 ([capture identity](MEDIA_REFERENCE.md#menu-capture-identity)).
 [Media notes](MEDIA.md#menu-demo)*
 

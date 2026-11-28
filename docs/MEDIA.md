@@ -11,7 +11,7 @@ development builds, not of the 0.3.0 release.
 | --- | --- |
 | [Fighter comparison](media/palutena-autoreticle-on-off.webp) | Palutena's cyan staff glow disappears in Off; targeting and hits remain. |
 | [Stage comparison](media/smashville-on-off.jpg) | Smashville's village scenery disappears in Off; the sky and playable platform remain. |
-| <video src="https://git.syntaxbyexample.com/intpa/ssbu-fx-control/media/blob/0d536c48034953127e1d3bd8d7f7eff87c266fe9" aria-label="Menu demo" autoplay muted loop playsinline controls></video> [Open the clip](media/fx-control-edit.mp4) | Captain Falcon's row cycles On → Off → Reduced → On. |
+| <video src="https://git.syntaxbyexample.com/intpa/ssbu-fx-control/media/blob/f4c35348b2c251117c00f4cefe6ced4be20be067" aria-label="Menu demo" autoplay muted loop playsinline controls></video> [Open the clip](media/fx-control-edit.mp4) | Captain Falcon's row cycles On → Off → Reduced → On. |
 
 ## Fighter comparison
 
@@ -35,11 +35,13 @@ Some native background objects remain. Animation and platform positions differ.
 
 ## Menu demo
 
-The 2026-10-24 clip uses the released Deluxe **0.7.0** and an FX **0.2.1
-development build**, with Scope All. The shipped scope default is Online.
-All reads `Unavailable` while fighter rows differ. It shows menu editing,
+The 2026-11-28 clip uses the released Deluxe **0.10.8** and FX Control
+**0.3.1**, with Scope Online, the shipped default. All reads `Unavailable`
+while fighter rows differ. It shows menu editing over the game's main menu,
 not gameplay or the Stages page. The [original still](media/fx-control-window.png)
-is retained. [Source details](MEDIA_REFERENCE.md#menu-capture-identity)
+is retained; it is from 2026-10-24, on Deluxe 0.7.0 and an FX 0.2.1
+development build, with Scope All.
+[Source details](MEDIA_REFERENCE.md#menu-capture-identity)
 
 ## Testing status
 
